@@ -282,7 +282,6 @@ wilcox.test(Ubi$avg_mag, Act$avg_mag,  exact=FALSE, correct=FALSE, paired = T, a
 
 
 
-
 #CC79A7 #56B4E9
 K9_as<-data.frame(Act$avg_mag, Ubi$avg_mag)
 p <- ggplot(aes(x = Act.avg_mag, y = Ubi.avg_mag), data = K9_as) +
