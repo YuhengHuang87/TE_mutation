@@ -1,0 +1,1640 @@
+```{r}
+#| label: load-packages
+#| include: false
+
+library(tidyverse)
+library(ggplot2)    
+library(ggpattern)
+mytheme = theme(
+#	plot.background = element_rect(fill = 'black', color = "black"), 
+	axis.ticks.y = element_line(color = "black", linewidth = 1), 
+	axis.ticks.x = element_line(color = "black", linewidth = 1), 
+	axis.ticks.length = unit(0.5, "cm"), 
+	axis.line.x = element_line(color = "black", linewidth = 2), 
+	axis.line.y = element_line(color = "black", linewidth = 2), 
+	axis.text.x = element_text(color = 'black', size  = 16, margin = margin(rep(4, 4))), 
+	axis.text.y = element_text(color = 'black', size = 16, margin = margin(rep(2, 4))), 
+	axis.title.x = element_text(color = "black", size = 14, margin = margin(rep(5, 4))), 
+	axis.title.y = element_text(color = "black", size = 14,  margin = margin(rep(5, 4))), 
+	plot.title = element_text(color = "black", size = 16, margin = margin(rep(5, 4))), 
+	panel.background = element_rect(fill = "white"), 
+#	panel.border = element_blank(),
+	panel.grid.major.y = element_blank(), 
+	panel.grid.minor.y = element_blank(), 
+	panel.grid.major.x = element_blank(), 
+	panel.grid.minor.x = element_blank(),
+	legend.background = element_blank())
+
+strainList = c("Control","Act","Ubi")
+gen = 22
+```
+
+## 1. phenotypic effects of the Su(var)3-9 transgenic copies
+
+### a. Su(var)3-9 expression and pigmentation assays
+
+#### qPCR
+
+```{r}
+#| label: Su(var)3-9 qPCR
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+qpcr <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ancestor_assay_sequencing/MA_parental_qPCR_fold_change.csv")
+#qpcr$genotype <- factor(qpcr$genotype, levels=c("Control","Act", "Ubi"))
+qpcr <- qpcr |> 
+  filter((genotype == "Control") | (genotype == "Ubi")) |> 
+  mutate(genotype = recode(genotype,
+                           "Control" = "pStrong",
+                           "Ubi" = "pWeak"))
+
+p <- ggplot(qpcr, aes(x=genotype, y = delta_CT, color = genotype, fill = genotype)) +
+  mytheme_black +
+  #scale_color_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+    #scale_fill_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+  scale_color_manual(values = c("#CC79A7", "#56B4E9")) + 
+    scale_fill_manual(values = c("#CC79A7", "#56B4E9")) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  geom_point(color = "white") +
+  ylab("delta_CT")
+
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/qPCR_SuVar3_9_two_genotypes_black.pdf", sep = ""), plot = p, width = 8, height = 5)
+    
+```
+
+#### RNA-seq
+
+```{r}
+#| label: ovary RNAseq
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+rna_seq <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ancestor_assay_sequencing/MA_parental_ovary_RNAseq.csv")
+#rna_seq <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ancestor_assay_sequencing/MA_parental_ovary_RNAseq_remove_one_control.csv")
+
+
+rna_seq$genotype <- factor(rna_seq$genotype, levels=c("Control","Act", "Ubi"))
+rna_seq <- rna_seq |> 
+  filter((genotype == "Control") | (genotype == "Ubi")) |> 
+  mutate(genotype = recode(genotype,
+                           "Control" = "pStrong",
+                           "Ubi" = "pWeak"))
+
+p <- ggplot(rna_seq, aes(x = promoter, y = RPKM, color = promoter, fill = promoter)) +
+  #scale_color_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+    #scale_fill_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+   scale_color_manual(values = c("#CC79A7", "#56B4E9")) + 
+    scale_fill_manual(values = c("#CC79A7", "#56B4E9")) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge", alpha=0.5) +
+  #geom_point(color = "black") +
+  geom_point(position = position_jitterdodge(jitter.width = 0.6, dodge.width = 0.3), size = 2) +
+  mytheme +
+  ylab("RPKM")
+
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/RNAseq_SuVar3-9_two_genotype_exp_magnitude.pdf", sep = ""), plot = p, width = 7, height = 5)
+
+
+p <- ggplot(rna_seq, aes(x = promoter, y = trans_genic_exp_prop, color = promoter, fill = promoter)) +
+  #scale_color_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+    #scale_fill_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+   scale_color_manual(values = c("#CC79A7", "#56B4E9")) + 
+    scale_fill_manual(values = c("#CC79A7", "#56B4E9")) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge", alpha=0.5) +
+  #geom_point(color = "black") +
+  geom_point(position = position_jitterdodge(jitter.width = 0.6, dodge.width = 0.3), size = 2) +
+  mytheme +
+  ylab("expression proportion")
+
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/RNAseq_SuVar3-9_two_genotype_trans_copy_exp_prop.pdf", sep = ""), plot = p, width = 7, height = 5)
+
+
+Control = rna_seq |> 
+  filter(genotype == "Control")
+
+Act = rna_seq |> 
+  filter(genotype == "Act")
+
+Ubi = rna_seq |> 
+  filter(genotype == "Ubi")
+
+count_allele<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ancestor_assay_sequencing/Act-2_RNAseq_ovary_output.table",header=T)
+
+count_ref <- count_allele |> 
+  group_by(position) |> 
+  summarise(ref_count = sum(refCount),
+            alt_count = sum(altCount)) |> 
+  mutate(exp_prop_ref = ref_count/(ref_count + alt_count)) |> 
+  filter(exp_prop_ref > 0) |> 
+  summarise(avg_prop_ref = mean(exp_prop_ref))
+
+Control = rna_seq |> 
+  filter(genotype == "Control")
+t.test(RPKM ~ promoter, data = rna_seq)
+t.test(trans_genic_exp_prop ~ promoter, data = rna_seq)
+
+```
+
+Ubi has lower expression level than the Control (t test p = `r t.test(Control$RPKM, Ubi$RPKM)$p.value`).
+
+#### pigmentation assay
+
+```{r}
+#| label: pigmentation assay
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+OD_assay <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ancestor_assay_sequencing/MA_parental_pigment_OD.csv")
+t.test(OD ~ promoter, data = OD_assay)
+OD_assay$block <- factor(OD_assay$block)
+lm_test = lm(OD ~ promoter + block, data = OD_assay)
+anova(lm_test)
+
+OD_assay$genotype <- factor(OD_assay$genotype, levels=c("Control","Act", "Ubi"))
+OD_control_Ubi <- OD_assay |> 
+  filter((genotype == "Control") | (genotype == "Ubi")) |> 
+  mutate(genotype = recode(genotype,
+                           "Control" = "pStrong",
+                           "Ubi" = "pWeak"))
+t.test(OD ~ promoter, data = OD_control_Ubi)
+
+p <- ggplot(OD_assay, aes(x = promoter, y = OD, color = promoter, fill = promoter)) +
+  #scale_color_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+    #scale_fill_manual(values = c("black","#CC79A7", "#56B4E9")) + 
+  scale_color_manual(values = c("#CC79A7", "#56B4E9")) + 
+    scale_fill_manual(values = c("#CC79A7", "#56B4E9")) + 
+  geom_bar(stat = "summary", fun = "mean", position = "dodge", alpha=0.5) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.6, dodge.width = 0.3), size = 2) +
+  mytheme +
+  ylab("OD")
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/PEV_pigmentation_SuVar3_9_two_promoters.pdf", sep = ""), plot = p, width = 7.5, height = 5)
+
+Control = OD_assay |> 
+  filter(genotype == "Control")
+
+Act = OD_assay |> 
+  filter(genotype == "Act")
+
+Ubi = OD_assay |> 
+  filter(genotype == "Ubi")
+
+```
+
+Ubi has higher OD than the Control (t test p = `r t.test(Control$OD, Ubi$OD)$p.value`), suggesting reduce heterochromatin spreading in the Ubi genotype.
+
+### b. H3K9me3 enrichment of TEs
+
+```{r}
+#| label: K9_ovary
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+#Control_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Control_gw_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#Control<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Control_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#Control_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/control_mean_TE_spreading_HMD_25_1000_10_measures.txt",header=F)
+#Control_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/control_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Ubi_TE_embryo_height_HMD_25_5000_50_mean_eu_standardized.txt",header=F)
+#each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Control_TE_embryo_height_HMD_25_5000_50_mean_all_chromo_standardized.txt",header=F)
+each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Control_mc_initial_local_normalized_TE_embryo_height_HMD_25_5000_50_measures.txt",header=F,fill = T)
+#Control_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Control_local_normalized_TE_embryo_height_HMD_25_5000_50_measures.txt",header=F)
+ foo <- data.frame(do.call('rbind', strsplit(as.character(each_TE$V5),'/', fixed = TRUE)));each_TE$class <- foo$X1;each_TE$TE_type <- ifelse(each_TE$class == "DNA","DNA","RNA")
+ 
+Control <- each_TE |> 
+  #filter(V1 == "3L" | V1 == "3R" | V1 == "X") |> 
+    #filter(TE_type == "DNA") |> 
+    #filter(V3 - V2 >= 1000) |> 
+  mutate(
+    avg_mag_rep1 = (V7 + V9)/2,
+    avg_mag_rep2 = (V8 + V10)/2,
+    #avg_mag_rep3 = (V15 + V18)/2,
+    #avg_mag_excl = (avg_mag_rep1 + avg_mag_rep3)/2,
+    avg_mag = (avg_mag_rep1 + avg_mag_rep2)/2
+  )
+#mean(Control$avg_mag_rep1);mean(Control$avg_mag_rep2);mean(Control$avg_mag_rep3);
+#median(Control$avg_mag_rep1);median(Control$avg_mag_rep2);median(Control$avg_mag_rep3);
+mean(Control$avg_mag);median(Control$avg_mag)
+
+#Act_K9 <-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Act_gw_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#Act<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Act_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Act_TE_embryo_height_HMD_25_5000_50_mean_eu_standardized.txt",header=F)
+#each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Act_TE_embryo_height_HMD_25_5000_50_mean_all_chromo_standardized.txt",header=F)
+each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Act_mc_initial_local_normalized_TE_embryo_height_HMD_25_5000_50_measures.txt",header=F,fill = T)
+
+#Act_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Act_local_normalized_TE_embryo_height_HMD_25_5000_50_measures.txt",header=F)
+ foo <- data.frame(do.call('rbind', strsplit(as.character(each_TE$V5),'/', fixed = TRUE)));each_TE$class <- foo$X1;each_TE$TE_type <- ifelse(each_TE$class == "DNA","DNA","RNA")
+Act <- each_TE |> 
+  #filter(V1 == "3L" | V1 == "3R" | V1 == "X") |> 
+  #filter(V3 - V2 >= 1000) |> 
+  mutate(
+    avg_mag_rep1 = (V7 + V10)/2,
+    avg_mag_rep2 = (V8 + V11)/2,
+    avg_mag_rep3 = (V9 + V12)/2,
+    avg_mag_excl = (avg_mag_rep1 + avg_mag_rep3)/2,
+    avg_mag = (avg_mag_rep1 + avg_mag_rep2 + avg_mag_rep3)/3
+  )
+mean(Act$avg_mag, na.rm = T);median(Act$avg_mag, na.rm = T)
+
+#Ubi_K9 <- read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Ubi_gw_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#Ubi<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Ubi_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#Ubi_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Ubi_mean_TE_height_HMD_25_5000_50_measures.txt",header=F)
+#each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Ubi_TE_embryo_height_HMD_25_5000_50_mean_eu_standardized.txt",header=F)
+#each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Ubi_TE_embryo_height_HMD_25_5000_50_mean_all_chromo_standardized.txt",header=F)
+each_TE<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Ubi_mc_initial_local_normalized_TE_embryo_height_HMD_25_5000_50_measures.txt",header = F,fill = T)
+
+#Ubi_K9<-read.table("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/Embryo/Ubi_local_normalized_TE_embryo_height_HMD_25_5000_50_measures.txt",header=F)
+ foo <- data.frame(do.call('rbind', strsplit(as.character(each_TE$V5),'/', fixed = TRUE)));each_TE$class <- foo$X1;each_TE$TE_type <- ifelse(each_TE$class == "DNA","DNA","RNA")
+Ubi <- each_TE |> 
+  #filter(V1 == "3L" | V1 == "3R" | V1 == "X") |> 
+  #filter(TE_type == "DNA") |>
+  #filter(V3 - V2 >= 1000) |> 
+  mutate(
+    avg_mag_rep1 = (V7 + V10)/2,
+    avg_mag_rep2 = (V8 + V11)/2,
+    avg_mag_rep3 = (V9 + V12)/2,
+    avg_mag_excl = (avg_mag_rep2 + avg_mag_rep3)/2,
+    avg_mag = (avg_mag_rep1 + avg_mag_rep2 + avg_mag_rep3)/3
+  )
+mean(Ubi$avg_mag, na.rm = T);median(Ubi$avg_mag, na.rm = T)
+#median(Ubi$avg_mag_rep1);median(Ubi$avg_mag_rep2);median(Ubi$avg_mag_rep3);
+#combined <- Ubi |> 
+#  left_join(
+#    Control, join_by(V1 == V1, V2 == V2)
+#  )
+#wilcox.test(combined$avg_mag.x, combined$avg_mag.y,  exact=FALSE, correct=FALSE, paired = T)
+#########
+
+wilcox.test(Act$avg_mag, Ubi$avg_mag,  exact=FALSE, correct=FALSE, paired = T)
+#wilcox.test(Control$avg_mag_excl, Ubi$avg_mag_excl,  exact=FALSE, correct=FALSE, paired = T)
+
+
+wilcox.test(Ubi$avg_mag, Act$avg_mag,  exact=FALSE, correct=FALSE, paired = T, alternative = "less")
+
+
+
+
+#CC79A7 #56B4E9
+K9_as<-data.frame(Act$avg_mag, Ubi$avg_mag)
+p <- ggplot(aes(x = Act.avg_mag, y = Ubi.avg_mag), data = K9_as) +
+  geom_point(size = 3,alpha = 0.5,color = "#CC79A7") +
+  geom_abline(intercept = 0, slope = 1) +
+  ylim(0,6) +
+  xlim(0,6) +
+  mytheme
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/embryo_K9_Act_Ubi_local_normalization_scatter_plot.pdf", sep = ""), plot = p, width = 5, height = 5)
+
+TE_Ubi_Control_K9 <- K9_as |> 
+    pivot_longer(cols = c(Control.avg_mag, Ubi.avg_mag), names_to = "geno", values_to = "K9")  |> 
+  mutate(geno = recode(geno,
+                           "Control.avg_mag" = "pStrong",
+                           "Ubi.avg_mag" = "pWeak"))
+
+color_choice <- c('#CC79A7','#56B4E9')
+#TE_Ubi_Control_K9$geno <- factor(TE_Ubi_Control_K9$geno, levels=c("Control.avg_mag", "Ubi.avg_mag"))
+p <- ggplot(TE_Ubi_Control_K9, aes(x = geno, y = K9, fill = geno, group = geno)) + 
+  scale_fill_manual(values = color_choice) +
+  geom_violin(width = 1, color = "black") +
+  geom_boxplot(width = 0.07, color = "black") +
+  ylab("H3K9me3 enrichment") +
+  ylim(0,3) +
+  mytheme
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/embryo_control_ubi_total_depth_standarized_black.pdf", sep = ""), plot = p, width = 7, height = 5)
+
+```
+
+Ubi has lower K9 enrichment around TEs than the Control (MWU paired test p = `r wilcox.test(Control$avg_mag, Ubi$avg_mag,  exact=FALSE, correct=FALSE, paired = T)$p.value`), but the K9 enrichment is not significantly different between Act and Control (MWU paired test p = `r wilcox.test(Control$avg_mag, Act$avg_mag,  exact=FALSE, correct=FALSE, paired = T)$p.value`).
+
+## 2. MA experiments and short-read sequencing
+
+### a. de novo TE analysis
+
+```{r}
+#| label: de novo TEs
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+TE_Control <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/TE_new_insertion/Control_temp2_summary.csv")
+TE_Act <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/TE_new_insertion/Act_temp2_summary.csv")
+TE_Ubi <- read_csv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/TE_new_insertion/Ubi_temp2_summary.csv")
+
+Control_count <- TE_Control |>
+  filter (Chr == "3L"| Chr == "3R"| Chr == "X") |> 
+  count(Sample_ID, sort = T)
+ID <- rep("miss_control",times = 11); count <- rep(0, times = 11)
+Control_new_TE <- bind_rows(Control_count, tibble(Sample_ID = ID, n = count))
+
+Act_count <- TE_Act |>
+  filter (Chr == "3L"| Chr == "3R"| Chr == "X") |> 
+  count(Sample_ID, sort = T)
+ID <- rep("miss_Act",times = 17); count <- rep(0, times = 17)
+Act_new_TE <- bind_rows(Act_count, tibble(Sample_ID = ID, n = count))
+
+Ubi_count <- TE_Ubi |>
+  filter (Chr == "3L"| Chr == "3R"| Chr == "X") |> 
+  count(Sample_ID, sort = T)
+ID <- rep("miss_Ubi",times = 3); count <- rep(0, times = 3)
+Ubi_new_TE <- bind_rows(Ubi_count, tibble(Sample_ID = ID, n = count))
+
+
+new_TE_num <- bind_rows(list(Control = Control_new_TE, Act = Act_new_TE, Ubi = Ubi_new_TE), .id = "id")
+#mean(new_TE_num$n)
+new_TE_num$id <- factor(new_TE_num$id, levels=c("Control", "Act","Ubi"))
+new_TE_num <- new_TE_num |> 
+  filter((id == "Control") | (id == "Ubi"))   |> 
+  mutate(id = recode(id,
+                           "Control" = "pStrong",
+                           "Ubi" = "pWeak"))
+
+color_choice <- c('#CC79A7','#56B4E9')
+#color_choice <- c('grey','#CC79A7','#56B4E9')
+
+p <- ggplot(new_TE_num, aes(x = id, y = n, fill = id, group = id)) + 
+  scale_fill_manual(values = color_choice) +
+  geom_violin(color = NA) +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.7, color = "white") +
+  ylab("de novo TE number") +
+  mytheme_black
+ #geom_jitter(shape=16, position=position_jitter(0.2))
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/new_TEs_two_genotypes_black_blackground.pdf", sep = ""), plot = p, width = 8, height = 6)
+
+```
+
+Ubi vs Control genotype (MWU Test, p = `r wilcox.test(Control$n,Ubi$n,  exact=FALSE, correct=FALSE, paired = FALSE)$p.value`). Ubi vs Act (MWU Test, p = `r wilcox.test(Act$n,Ubi$n,  exact=FALSE, correct=FALSE, paired = FALSE)$p.value`). Act vs Control (MWU Test, p = `r wilcox.test(Act$n,Control$n,  exact=FALSE, correct=FALSE, paired = FALSE)$p.value`).
+
+### b. update SNP mutation analysis
+
+```{r}
+#| label: SNP around TEs
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+chr_to_find <- c("2L", "2R", "3L", "3R","X")
+regex_pattern <- paste(chr_to_find, collapse = "|")
+
+
+all_mut_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/mc_initial_assembly_Ubi_MAlines_eu_homo_heter_all_mutation_filtered.txt", col_names = F)
+
+
+TE_mut_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/TE_mutation_counts_5kb_exclude50bp_Ubi.txt", col_names = F)
+mut_ubi <- TE_mut_ubi |> 
+  filter(str_detect(X1, regex_pattern)) |> 
+  mutate(mut_num = X6 + X7) |> 
+  summarise(near_TE_mut = sum(mut_num)) |> 
+  mutate(far_TE_mut = nrow(all_mut_ubi) - near_TE_mut)
+
+call_site_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/combined_TEs_separate_samples_Ubi_MAlines_num_callable.txt", col_names = F)
+#call_site_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/combined_TEs_each_sample_Ubi_MAlines_num_callable.txt", col_names = F)
+sites_ubi <- call_site_ubi |> 
+  summarise(
+    near_TE_site = sum(X3),
+    far_TE_site = sum(X2 - X3)
+            )
+combined_ubi <- bind_cols(sites_ubi, mut_ubi) |> 
+  mutate(near_TE_mu = near_TE_mut/near_TE_site/22,
+         far_TE_mu = far_TE_mut/far_TE_site/22
+         )
+#ubi_matrix <- matrix(c(347722121,  5058902565,          45,        514), ncol = 2)
+#chisq.test(ubi_matrix)
+call_site_TE_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/separate_each_TE_combined_samples_Ubi_MAlines_num_callable.txt", col_names = F)
+
+
+
+all_mut_con <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/mc_initial_assembly_Control_MAlines_eu_homo_heter_all_mutation_filtered.txt", col_names = F)
+TE_mut_con <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/TE_mutation_counts_5kb_exclude50bp_Control.txt", col_names = F)
+mut_con <- TE_mut_con |> 
+  filter(str_detect(X1, regex_pattern)) |> 
+  mutate(mut_num = X6 + X7) |> 
+  summarise(near_TE_mut = sum(mut_num)) |> 
+  mutate(far_TE_mut = nrow(all_mut_con) - near_TE_mut)
+
+call_site_con <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/combined_TEs_separate_samples_Control_MAlines_num_callable.txt", col_names = F)
+sites_con <- call_site_con |> 
+  summarise(
+    near_TE_site = sum(X3),
+    far_TE_site = sum(X2 - X3)
+            )
+combined_con <- bind_cols(sites_con, mut_con) |> 
+  mutate(near_TE_mu = near_TE_mut/near_TE_site/22,
+         far_TE_mu = far_TE_mut/far_TE_site/22
+         )
+call_site_TE_con <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/separate_each_TE_combined_samples_Control_MAlines_num_callable.txt", col_names = F)
+
+
+all_mut_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/mc_initial_assembly_Act_MAlines_eu_homo_heter_all_mutation_filtered.txt", col_names = F)
+TE_mut_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/TE_mutation_counts_5kb_exclude50bp_Act.txt", col_names = F)
+mut_act <- TE_mut_act |> 
+  filter(str_detect(X1, regex_pattern)) |> 
+  mutate(mut_num = X6 + X7) |> 
+  summarise(near_TE_mut = sum(mut_num)) |> 
+  mutate(far_TE_mut = nrow(all_mut_act) - near_TE_mut)
+
+call_site_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/combined_TEs_separate_samples_Act_MAlines_num_callable.txt", col_names = F)
+sites_act <- call_site_act |> 
+  summarise(
+    near_TE_site = sum(X3),
+    far_TE_site = sum(X2 - X3)
+            )
+combined_act <- bind_cols(sites_act, mut_act) |> 
+  mutate(near_TE_mu = near_TE_mut/near_TE_site/22,
+         far_TE_mu = far_TE_mut/far_TE_site/22
+         )
+call_site_TE_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/separate_each_TE_combined_samples_Act_MAlines_num_callable.txt", col_names = F)
+
+TE_mut_site_ubi <- TE_mut_ubi |> 
+  left_join(
+    call_site_TE_ubi, join_by(X1 == X1, X2 == X2, X3 == X3)
+  )  |> 
+  mutate(wTE_mut_num = X6+X7,
+    wTE_rate = (wTE_mut_num/X4.y)/gen) |> 
+   left_join(
+    Ubi, join_by(X1 == V1, X2 == V2, X3 == V3)
+  )  |> 
+  select(X1, X2, X3, X4.x, X5, class, TE_type, wTE_rate, avg_mag, wTE_mut_num, X4.y)# |> 
+  #filter(X3.x - X2 < 15000)
+
+TE_mut_site_con <- TE_mut_con |> 
+  left_join(
+    call_site_TE_con, join_by(X1 == X1, X2 == X2, X3 == X3)
+  )  |> 
+  mutate(wTE_mut_num = X6+X7,
+    wTE_rate = (wTE_mut_num/X4.y)/gen) |> 
+   left_join(
+    Control, join_by(X1 == V1, X2 == V2, X3 == V3)
+  )  |> 
+  select(X1, X2, X3, X4.x, X5, class, TE_type, wTE_rate, avg_mag, wTE_mut_num, X4.y)
+
+TE_mut_site_act <- TE_mut_act |> 
+  left_join(
+    call_site_TE_act, join_by(X1 == X1, X2 == X2, X3 == X3)
+  )  |> 
+  mutate(wTE_mut_num = X6+X7,
+    wTE_rate = (wTE_mut_num/X4.y)/gen) |> 
+   left_join(
+    Act, join_by(X1 == V1, X2 == V2, X3 == V3)
+  )  |> 
+  select(X1, X2, X3, X4.x, X5, class, TE_type, wTE_rate, avg_mag, wTE_mut_num, X4.y)
+
+
+TE_ubi_act_K9_RNA_mean <- TE_mut_site_ubi |> 
+  left_join(
+    TE_mut_site_act, join_by(X1 == X1, X2 == X2, X3 == X3)
+  ) |> 
+  drop_na(wTE_rate.x, wTE_rate.y) |> 
+  filter(TE_type.x == "RNA") |> 
+  summarise(
+    Ubi_mean = mean(wTE_rate.x),
+    Control_mean = mean(wTE_rate.y),
+    Ubi_mute = sum(wTE_mut_num.x),
+    Ubi_site = sum(X4.y.x),
+    Control_mute = sum(wTE_mut_num.y),
+    Control_site = sum(X4.y.y)
+  )
+
+
+combined_TE_type_con <- bind_rows(
+  "DNA" = TE_ubi_con_K9_DNA_mean,
+  "RNA" = TE_ubi_con_K9_RNA_mean,
+  .id = "TE_type"
+) |> 
+  pivot_longer(
+    cols = c(Ubi_mean, Control_mean),
+    names_to = 'site_type',
+    values_to = 'mutation_rate'
+  ) |> 
+  mutate(site_type = recode(site_type,
+                           "Control_mean" = "pStrong",
+                           "Ubi_mean" = "pWeak"))
+
+
+combined_TE_type_act$TE_type <- factor(combined_TE_type_act$TE_type, levels = c("RNA","DNA"))
+write.table(combined_TE_type, file = "/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/combined_TE_type_mutation_rate.txt",col.names = T, row.names = FALSE, quote = FALSE)
+
+p1 <- ggplot(combined_TE_type_act, aes(x = site_type, y = mutation_rate, fill = site_type, pattern = TE_type, group = TE_type)) +
+  #geom_bar(stat="identity",color = "white", position = "dodge2", width = 0.7) +
+  scale_fill_manual(values=c("pStrong"="#CC79A7", "pWeak"="#56B4E9"), guide = "none") + 
+  #scale_fill_manual(values=c("#bf478e","#687cbb"), guide = "none") + 
+  #scale_alpha_manual(values = c(RNA = 0.5, DNA = 1)) +
+    scale_pattern_manual(values = c("RNA" = "stripe",
+        "DNA" = "circle")) +
+  geom_bar_pattern(
+        stat = "identity",
+        position = position_dodge(width = 0.9), # Changed from "stack" to "position_dodge"
+        color = "white",           # Color of the bar outlines
+        pattern_color = "white",    # Color of the pattern lines
+        pattern_angle = 45,      # Angle of the pattern
+        pattern_density = 0.1,   # Density of the pattern
+        pattern_spacing = 0.02   # Spacing between pattern lines
+      ) +
+  
+  mytheme_black +
+  ylab("mutation rate /bp/gen") +
+  ylim(0, 0.0000000117)
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/SNP_mutation_RNA_DNA_TEs_update_ubi_act_black.pdf", sep = ""), plot = p1, width = 8, height = 7)
+
+###################### mutation rate vs K9 enrichment
+TE_ubi_act_K9 <- TE_mut_site_ubi |> 
+  left_join(
+    TE_mut_site_act, join_by(X1 == X1, X2 == X2, X3 == X3)
+  ) |> 
+  mutate(
+    delta_K9 = avg_mag.x - avg_mag.y,
+    ratio_K9 = avg_mag.x/avg_mag.y,
+    delta_mu = wTE_rate.x - wTE_rate.y,
+    cata = case_when((delta_mu == 0) ~ 'equal',
+                                (delta_mu > 0) ~ 'pWeak high',
+                                  (delta_mu < 0) ~ 'pWeak low')
+  ) |> 
+  drop_na(cata)
+
+
+
+TE_ubi_con_K9_focal <- TE_ubi_con_K9 |> 
+  filter(TE_type.x == "DNA")
+
+u_unchange_TE_Ubi_Control_K9 <- TE_ubi_con_K9_focal |> 
+  filter(cata == "equal")
+u_ubi_higher_TE_Ubi_Control_K9 <- TE_ubi_con_K9_focal |> 
+  filter(cata == "pWeak high")
+u_ubi_lower_TE_Ubi_Control_K9 <- TE_ubi_con_K9_focal |>
+  filter(cata == "pWeak low")
+
+wilcox.test(u_ubi_higher_TE_Ubi_Control_K9$delta_K9, u_ubi_lower_TE_Ubi_Control_K9$delta_K9,  exact=FALSE, correct=FALSE)
+
+
+color_choice <- c('grey','#67c4ae','#567442')
+#color_choice <- c('grey','#567442')
+TE_ubi_con_K9_focal$cata <- factor(TE_ubi_con_K9_focal$cata, levels=c("equal", "pWeak low","pWeak high"))
+p <- ggplot(TE_ubi_con_K9_focal, aes(x = cata, y = delta_K9, fill = cata, group = cata)) + 
+  scale_fill_manual(values = color_choice) +
+  geom_violin(width = 1, color = "white") +
+  geom_boxplot(width = 0.07, color = "white") +
+  ylim(-0.6,0.6) +
+  mytheme_black
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/K9_TEs_ubi_con_mu_changes_all_base_black.pdf", sep = ""), plot = p, width = 9.5, height = 7.5)
+  #geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.7, color = "black")
+
+plot(TE_Ubi_Control_K9$percent_delta_K9, TE_Ubi_Control_K9$delta_mu)
+cor.test(TE_Ubi_Act_K9$delta_K9, TE_Ubi_Act_K9$delta_mu, method = "spearman")
+
+TE_Control_Act_K9 <- TE_mut_site_Control |> 
+  left_join(
+    TE_mut_site_Act, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  mutate(
+    delta_K9 = avg_mag.y - avg_mag.x,
+    percent_delta_K9 = delta_K9/avg_mag.y,
+    delta_mu = wTE_rate.x - wTE_rate.y
+  )
+plot(TE_Control_Act_K9$percent_delta_K9, TE_Control_Act_K9$delta_mu)
+cor.test(TE_Control_Act_K9$delta_K9, TE_Control_Act_K9$delta_mu, method = "spearman")
+```
+
+### b2. backup SNP mutation analysis
+
+We used Strelka2 to identify de novo SNP mutations in euchromatin of the focal chromosomes.
+
+```{r}
+#| label: SNP numbers
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+gen = 22
+
+##### sum all TEs and samples
+sum_SNP_con <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Control_MAlines_update_homo_heter_mutation_read_count_end.txt", col_names = F)
+
+sum_SNP_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Ubi_MAlines_update_homo_heter_mutation_read_count_end.txt", col_names = F)
+
+sum_SNP_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Act_MAlines_update_homo_heter_mutation_read_count_end.txt", col_names = F)
+
+site_con <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Control_MAlines_num_callable.txt", col_names = F)
+
+site_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Ubi_MAlines_num_callable.txt", col_names = F)
+
+
+site_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Act_MAlines_num_callable.txt", col_names = F)
+
+con_merge <- merge(sum_SNP_con,site_con,by = "X1")
+act_merge <- merge(sum_SNP_act,site_act,by = "X1")
+ubi_merge <- merge(sum_SNP_ubi,site_ubi,by = "X1")
+
+#Control <- df_merge |>
+#  mutate(
+#    TE_mute_rate = X3.x/X3.y,
+#    nonTE_mute_rate = (X2.x-X3.x)/(X2.y-X3.y)
+#  ) 
+sum_mut_site_con <- con_merge |> 
+  summarise(across(c(X2.x, X3.x, X2.y, X3.y), sum))
+sum_mut_site_act <- act_merge |> 
+  summarise(across(c(X2.x, X3.x, X2.y, X3.y), sum))
+sum_mut_site_ubi <- ubi_merge |> 
+  summarise(across(c(X2.x, X3.x, X2.y, X3.y), sum))
+
+combined_df <- bind_rows(
+  "Control" = sum_mut_site_con,
+  "Act" = sum_mut_site_act,
+  "Ubi" = sum_mut_site_ubi,
+  .id = "genotype"
+) |> 
+  mutate(
+    near_TE_mute_rate = (X3.x/X3.y)/gen,
+    far_from_TE_rate = ((X2.x-X3.x)/(X2.y-X3.y))/gen
+  ) |> 
+  pivot_longer(
+    cols = c(near_TE_mute_rate, far_from_TE_rate),
+    names_to = 'site_type',
+    values_to = 'mutation_rate'
+  )
+
+con_matrix <- matrix(unlist(c(sum_mut_site_con[2], sum_mut_site_con[1]-sum_mut_site_con[2],       sum_mut_site_con[4],    sum_mut_site_con[3]-sum_mut_site_con[4])), ncol = 2)
+act_matrix <- matrix(unlist(c(sum_mut_site_act[2], sum_mut_site_act[1]-sum_mut_site_act[2],       sum_mut_site_act[4],    sum_mut_site_act[3]-sum_mut_site_act[4])), ncol = 2)
+ubi_matrix <- matrix(unlist(c(sum_mut_site_ubi[2], sum_mut_site_ubi[1]-sum_mut_site_ubi[2],       sum_mut_site_ubi[4],    sum_mut_site_ubi[3]-sum_mut_site_ubi[4])), ncol = 2)
+
+#chisq.test(act_matrix)
+
+combined_df$genotype <- factor(combined_df$genotype, levels=c("Control","Act", "Ubi"))
+combined_df <- combined_df |> 
+  filter((genotype == "Control") | (genotype == "Ubi"))   |> 
+  mutate(genotype = recode(genotype,
+                           "Control" = "pStrong",
+                           "Ubi" = "pWeak"))
+
+p <- ggplot(combined_df, aes(x = genotype, y = mutation_rate, fill = genotype, alpha = site_type)) +
+  geom_bar(stat="identity",color = "white", position = "dodge", width = 0.7)+
+  scale_fill_manual(values=c("black","#CC79A7", "#56B4E9"), guide = "none") + 
+  #scale_fill_manual(values=c("#CC79A7", "#56B4E9"), guide = "none") + 
+  scale_alpha_manual(values = c(far_from_TE_rate = 0.5, near_TE_mute_rate = 1)) +
+  mytheme +
+  ylab("mutation rate /bp/gen") +
+  ylim(0, 0.0000000117)
+
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/SNP_mutation_near_far_from_TEs_update_two_genotypes_axis_black.pdf", sep = ""), plot = p, width = 8, height = 7)
+
+################### not used
+WithTE_Control_K9 <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Control_each_TEs_avg_locus_homo_heter_mutation.txt", col_names = F) |> 
+  mutate(
+    wTE_rate = X6/X7
+    ) |>
+  left_join(
+    Control, join_by(X1 == V1, X2 == V2) #here Control is the K9 measure
+  )  |> 
+  select(X1:X5, wTE_rate, avg_mag) 
+
+WithTE_Ubi_K9 <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Ubi_each_TEs_avg_locus_homo_heter_mutation.txt", col_names = F) |> 
+  mutate(
+    wTE_rate = X6/X7,
+    leng = X3 - X2 + 1
+    ) |>
+  left_join(
+    Ubi, join_by(X1 == V1, X2 == V2)
+  )  |> 
+  select(X1:X5, leng, wTE_rate, avg_mag)# |> 
+  #filter(leng < 15000)
+
+  foo <- data.frame(do.call('rbind', strsplit(as.character(WithTE_Ubi_K9$X5),'/', fixed = TRUE)));WithTE_Ubi_K9$class <- foo$X1;WithTE_Ubi_K9$TE_type <- ifelse(WithTE_Ubi_K9$class == "DNA","DNA","RNA")
+
+WithTE_Ubi_Control_K9 <- WithTE_Ubi_K9 |> 
+  left_join(
+    WithTE_Control_K9, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  mutate(
+    delta_K9 = avg_mag.y - avg_mag.x,
+    percent_delta_K9 = delta_K9/avg_mag.y,
+    delta_mu = wTE_rate.x - wTE_rate.y
+  )# |> 
+  #filter (TE_type == "RNA")
+
+cor.test(WithTE_Ubi_Control_K9$percent_delta_K9, WithTE_Ubi_Control_K9$delta_mu, method = "spearman")
+
+plot(WithTE_Ubi_Act_K9$delta_K9, WithTE_Ubi_Act_K9$delta_mu)
+cor.test(WithTE_Ubi_Act_K9$delta_K9, WithTE_Ubi_Act_K9$delta_mu, method = "spearman")
+
+plot(WithTE_Control_Act_K9$delta_K9, WithTE_Control_Act_K9$delta_mu)
+
+################# use those below
+TE_mut_Ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_each_TEs_3_X_Ubi_MAlines_homo_heter_mutation_read_count_end.txt", col_names = F)
+TE_site_Ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_each_TE_3_X_Ubi_MAlines_num_callable.txt", col_names = F)
+
+TE_mut_Control <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_each_TEs_3_X_Control_MAlines_homo_heter_mutation_read_count_end.txt", col_names = F)
+TE_site_Control <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_each_TE_3_X_Control_MAlines_num_callable.txt", col_names = F)
+
+TE_mut_Act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_each_TEs_3_X_Act_MAlines_homo_heter_mutation_read_count_end.txt", col_names = F)
+TE_site_Act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_each_TE_3_X_Act_MAlines_num_callable.txt", col_names = F)
+
+TE_mut_site_Ubi <- TE_mut_Ubi |> 
+  left_join(
+    TE_site_Ubi, join_by(X1 == X1, X2 == X2)
+  )  |> 
+  mutate(wTE_rate = (X4.x/X4.y)/gen) |> 
+   left_join(
+    Ubi, join_by(X1 == V1, X2 == V2)
+  )  |> 
+  select(X1, X2, X3.x, V4, V5, class, TE_type, wTE_rate, avg_mag, X4.x, X4.y)# |> 
+  #filter(X3.x - X2 < 15000)
+
+TE_mut_site_Control <- TE_mut_Control |> 
+  left_join(
+    TE_site_Control, join_by(X1 == X1, X2 == X2)
+  )  |> 
+  mutate(wTE_rate = (X4.x/X4.y)/gen) |> 
+   left_join(
+    Control, join_by(X1 == V1, X2 == V2)
+  )  |> 
+  select(X1, X2, X3.x, V4, V5, class, TE_type, wTE_rate, avg_mag, X4.x, X4.y) 
+
+
+TE_mut_site_Act <- TE_mut_Act |> 
+  left_join(
+    TE_site_Act, join_by(X1 == X1, X2 == X2)
+  )  |> 
+  mutate(wTE_rate = (X4.x/X4.y)/gen) |> 
+   left_join(
+    Act, join_by(X1 == V1, X2 == V2)
+  )  |> 
+  select(X1, X2, X3.x, V4, V5, class, TE_type, wTE_rate, avg_mag, X4.x, X4.y) 
+
+
+TE_Ubi_Control_K9_DNA_mean <- TE_mut_site_Ubi |> 
+  left_join(
+    TE_mut_site_Control, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  drop_na(wTE_rate.x, wTE_rate.y) |> 
+  filter(TE_type.x == "DNA") |> 
+  summarise(
+    Ubi_mean = mean(wTE_rate.x),
+    Control_mean = mean(wTE_rate.y),
+    Ubi_mute = sum(X4.x.x),
+    Ubi_site = sum(X4.y.x),
+    Control_mute = sum(X4.x.y),
+    Control_site = sum(X4.y.y)
+  )
+
+TE_Ubi_Control_K9_RNA_mean <- TE_mut_site_Ubi |> 
+  left_join(
+    TE_mut_site_Control, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  drop_na(wTE_rate.x, wTE_rate.y) |> 
+  filter(TE_type.x == "RNA") |> 
+  summarise(
+    Ubi_mean = mean(wTE_rate.x),
+    Control_mean = mean(wTE_rate.y),
+    Ubi_mute = sum(X4.x.x),
+    Ubi_site = sum(X4.y.x),
+    Control_mute = sum(X4.x.y),
+    Control_site = sum(X4.y.y)
+  )
+
+combined_TE_type <- bind_rows(
+  "DNA" = TE_Ubi_Control_K9_DNA_mean,
+  "RNA" = TE_Ubi_Control_K9_RNA_mean,
+  .id = "TE_type"
+) |> 
+  pivot_longer(
+    cols = c(Ubi_mean, Control_mean),
+    names_to = 'site_type',
+    values_to = 'mutation_rate'
+  ) |> 
+  mutate(site_type = recode(site_type,
+                           "Control_mean" = "pStrong",
+                           "Ubi_mean" = "pWeak"))
+
+
+combined_TE_type$TE_type <- factor(combined_TE_type$TE_type, levels = c("RNA","DNA"))
+write.table(combined_TE_type, file = "/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/combined_TE_type_mutation_rate.txt",col.names = T, row.names = FALSE, quote = FALSE)
+
+p1 <- ggplot(combined_TE_type, aes(x = site_type, y = mutation_rate, fill = site_type, pattern = TE_type, group = TE_type)) +
+  #geom_bar(stat="identity",color = "white", position = "dodge2", width = 0.7) +
+  scale_fill_manual(values=c("pStrong"="#CC79A7", "pWeak"="#56B4E9"), guide = "none") + 
+  #scale_fill_manual(values=c("#bf478e","#687cbb"), guide = "none") + 
+  #scale_alpha_manual(values = c(RNA = 0.5, DNA = 1)) +
+    scale_pattern_manual(values = c("RNA" = "stripe",
+        "DNA" = "circle")) +
+  geom_bar_pattern(
+        stat = "identity",
+        position = position_dodge(width = 0.9), # Changed from "stack" to "position_dodge"
+        color = "white",           # Color of the bar outlines
+        pattern_color = "white",    # Color of the pattern lines
+        pattern_angle = 45,      # Angle of the pattern
+        pattern_density = 0.1,   # Density of the pattern
+        pattern_spacing = 0.02   # Spacing between pattern lines
+      ) +
+  
+  mytheme_black +
+  ylab("mutation rate /bp/gen") +
+  ylim(0, 0.0000000117)
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/SNP_mutation_RNA_DNA_TEs_update_two_genotypes_black.pdf", sep = ""), plot = p1, width = 8, height = 7)
+
+##########
+TE_Ubi_Control_K9_yes_mean <- TE_mut_site_Ubi |> 
+  left_join(
+    TE_mut_site_Control, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  drop_na(wTE_rate.x, wTE_rate.y) |> 
+  #filter((avg_mag.x < 1)&(avg_mag.y < 1)) |> 
+  filter((avg_mag.x > 1)|(avg_mag.y > 1)) |> 
+  summarise(
+    Ubi_mean = mean(wTE_rate.x),
+    Control_mean = mean(wTE_rate.y),
+    Ubi_mute = sum(X4.x.x),
+    Ubi_site = sum(X4.y.x),
+    Control_mute = sum(X4.x.y),
+    Control_site = sum(X4.y.y)
+  )
+
+mat <- matrix(unlist(c(p[3], p[4]-p[3], p[5], p[6]-p[5])), ncol = 2);chisq.test(mat)
+
+TE_Ubi_Control_K9 <- TE_mut_site_Ubi |> 
+  left_join(
+    TE_mut_site_Control, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  mutate(
+    delta_K9 = avg_mag.y - avg_mag.x,
+    percent_delta_K9 = delta_K9/avg_mag.y,
+    delta_mu = wTE_rate.x - wTE_rate.y,
+    lfc_K9 = log2(avg_mag.x/avg_mag.y),
+    cate = if_else(percent_delta_K9 > 0, "Ubi_reduced_K9", "Ubi_increased_K9")
+  ) |> 
+  filter (abs(delta_mu) < 0.000004 & X3.x.x - X2 < 15000)
+
+TE_Ubi_Control_K9 |> 
+  group_by(cate) |> 
+  summarise(
+    count_filtered = sum(delta_mu > 0, na.rm = TRUE), # Count values > 10 in each group
+    total_count = n() # Total count in each group
+  )
+
+plot(TE_Ubi_Control_K9$delta_K9, TE_Ubi_Control_K9$delta_mu)
+cor.test(TE_Ubi_Control_K9$delta_K9, TE_Ubi_Control_K9$delta_mu,method = "spearman")
+########## mutation rate vs K9 enrichment
+
+TE_Ubi_Control_K9 <- TE_mut_site_Ubi |> 
+  left_join(
+    TE_mut_site_Control, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  mutate(
+    delta_K9 = avg_mag.x - avg_mag.y,
+    ratio_K9 = avg_mag.x/avg_mag.y,
+    delta_mu = wTE_rate.x - wTE_rate.y,
+    cata = case_when((delta_mu == 0) ~ 'equal',
+                                (delta_mu > 0) ~ 'pWeak high',
+                                  TRUE ~ 'pWeak low')
+  )
+
+u_unchange_TE_Ubi_Control_K9 <- TE_Ubi_Control_K9 |> 
+  filter(cata == "equal")
+u_ubi_higher_TE_Ubi_Control_K9 <- TE_Ubi_Control_K9 |> 
+  filter(cata == "pWeak high")
+u_ubi_lower_TE_Ubi_Control_K9 <- TE_Ubi_Control_K9 |> 
+  filter(cata == "pWeak low")
+
+wilcox.test(u_ubi_higher_TE_Ubi_Control_K9$delta_K9, u_ubi_lower_TE_Ubi_Control_K9$delta_K9,  exact=FALSE, correct=FALSE)
+wilcox.test(u_ubi_higher_TE_Ubi_Act_K9$delta_K9, u_ubi_lower_TE_Ubi_Act_K9$delta_K9,  exact=FALSE, correct=FALSE)
+
+TE_Ubi_Control_K9_focal <- TE_Ubi_Control_K9 |> 
+  filter(TE_type.x == "DNA")
+u_unchange_TE_Ubi_Control_K9_focal <- TE_Ubi_Control_K9_focal |> 
+  filter(cata == "equal")
+u_ubi_higher_TE_Ubi_Control_K9_focal <- TE_Ubi_Control_K9_focal |> 
+  filter(cata == "pWeak high")
+
+u_ubi_lower_TE_Ubi_Control_K9_focal <- TE_Ubi_Control_K9_focal |> 
+  filter(cata == "pWeak low")
+wilcox.test(u_ubi_higher_TE_Ubi_Control_K9_focal$delta_K9, u_unchange_TE_Ubi_Control_K9_focal$delta_K9,  exact=FALSE, correct=FALSE)
+
+
+#color_choice <- c('grey','#67c4ae','#567442')
+color_choice <- c('grey','#567442')
+TE_Ubi_Control_K9_focal$cata <- factor(TE_Ubi_Control_K9_focal$cata, levels=c("equal", "pWeak low","pWeak high"))
+p <- ggplot(TE_Ubi_Control_K9_focal, aes(x = cata, y = delta_K9, fill = cata, group = cata)) + 
+  scale_fill_manual(values = color_choice) +
+  geom_violin(width = 1, color = "white") +
+  geom_boxplot(width = 0.07, color = "white") +
+  ylim(-0.55,0.56) +
+  mytheme_black
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/K9_TEs_Ubi_mu_changes_DNA_base_black.pdf", sep = ""), plot = p, width = 9.5, height = 7.5)
+  #geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.7, color = "black")
+
+plot(TE_Ubi_Control_K9$percent_delta_K9, TE_Ubi_Control_K9$delta_mu)
+cor.test(TE_Ubi_Act_K9$delta_K9, TE_Ubi_Act_K9$delta_mu, method = "spearman")
+
+TE_Control_Act_K9 <- TE_mut_site_Control |> 
+  left_join(
+    TE_mut_site_Act, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  mutate(
+    delta_K9 = avg_mag.y - avg_mag.x,
+    percent_delta_K9 = delta_K9/avg_mag.y,
+    delta_mu = wTE_rate.x - wTE_rate.y
+  )
+plot(TE_Control_Act_K9$percent_delta_K9, TE_Control_Act_K9$delta_mu)
+cor.test(TE_Control_Act_K9$delta_K9, TE_Control_Act_K9$delta_mu, method = "spearman")
+
+
+```
+
+Control genotype (Chi-Squre Test, p = `r chisq.test(con_matrix)$p.value`). Act (Chi-Squre Test, p = `r chisq.test(act_matrix)$p.value`). Ubi (Chi-Squre Test, p = `r chisq.test(ubi_matrix)$p.value`).
+
+### c. mutation spectrum analysis
+
+```{r}
+#| label: SNP spectrum
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+near_TE_sperum <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/nearby_TE_Join_sample_3_X_Control_MAlines_update_homo_heter_mutation_pass.txt", col_names = F)  |>
+  count(X4, X5) |> 
+  mutate(
+    group = "TE_flanking"
+  )
+far_TE_sperum <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/far_from_TE_Join_sample_3_X_Control_MAlines_update_homo_heter_mutation_pass.txt", col_names = F)  |>
+  count(X4, X5) |> 
+  mutate(
+    group = "TE_distance"
+  )
+
+joined_TE_sperum_Control <- left_join(far_TE_sperum, near_TE_sperum,  by=c('X4'='X4', 'X5'='X5')) |> 
+  replace_na(list(n.y = 0, prop.y = 0)) |> 
+  unite("mut_type", c("X4","X5")) |> 
+  mutate(
+    category = case_when(
+      mut_type == "A_G" | mut_type == "G_A" | mut_type == "C_T" | mut_type == "T_C" ~ "transition",
+      TRUE ~ "transversion"
+  )) |> 
+  group_by(mut_type) |> 
+  summarise(
+    TE_dis_n = sum(n.x),
+    TE_near_n = sum(n.y)
+  ) |> 
+  mutate(
+    dis_TE_proportion = TE_dis_n / sum(TE_dis_n),
+    near_TE_proportion = TE_near_n / sum(TE_near_n)
+  )
+
+
+near_TE_sperum <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/nearby_TE_Join_sample_3_X_Act_MAlines_update_homo_heter_mutation_pass.txt", col_names = F)  |>
+  count(X4, X5) |> 
+  mutate(
+    group = "TE_flanking"
+  )
+far_TE_sperum <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/far_from_TE_Join_sample_3_X_Act_MAlines_update_homo_heter_mutation_pass.txt", col_names = F)  |>
+  count(X4, X5) |> 
+  mutate(
+    group = "TE_distance"
+  )
+
+joined_TE_sperum_Act <- left_join(far_TE_sperum, near_TE_sperum,  by=c('X4'='X4', 'X5'='X5')) |> 
+  replace_na(list(n.y = 0, prop.y = 0)) |> 
+  unite("mut_type", c("X4","X5")) |> 
+  mutate(
+    category = case_when(
+      mut_type == "A_G" | mut_type == "G_A" | mut_type == "C_T" | mut_type == "T_C" ~ "transition",
+      TRUE ~ "transversion"
+  )) |> 
+  group_by(category) |> 
+  summarise(
+    TE_dis_n = sum(n.x),
+    TE_near_n = sum(n.y)
+  ) |> 
+  mutate(
+    dis_TE_proportion = TE_dis_n / sum(TE_dis_n),
+    near_TE_proportion = TE_near_n / sum(TE_near_n)
+  )
+
+near_TE_sperum <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/nearby_TE_Join_sample_3_X_Ubi_MAlines_update_homo_heter_mutation_pass.txt", col_names = F)  |>
+  count(X4, X5) |> 
+  mutate(
+    group = "TE_flanking"
+  )
+far_TE_sperum <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/far_from_TE_Join_sample_3_X_Ubi_MAlines_update_homo_heter_mutation_pass.txt", col_names = F)  |>
+  count(X4, X5) |> 
+  mutate(
+    group = "TE_distance"
+  )
+
+joined_TE_sperum_Ubi <- left_join(far_TE_sperum, near_TE_sperum,  by=c('X4'='X4', 'X5'='X5')) |> 
+  replace_na(list(n.y = 0, prop.y = 0)) |> 
+  unite("mut_type", c("X4","X5")) |> 
+  mutate(
+    category = case_when(
+      mut_type == "A_G" | mut_type == "G_A" | mut_type == "C_T" | mut_type == "T_C" ~ "transition",
+      TRUE ~ "transversion"
+  )) |> 
+  group_by(mut_type) |> 
+  summarise(
+    TE_dis_n = sum(n.x),
+    TE_near_n = sum(n.y)
+  ) |> 
+  mutate(
+    dis_TE_proportion = TE_dis_n / sum(TE_dis_n),
+    near_TE_proportion = TE_near_n / sum(TE_near_n)
+  )
+
+
+combined_genotype <- bind_rows(
+  "Weak" = joined_TE_sperum_Ubi,
+  "Strong" = joined_TE_sperum_Control,
+  .id = "genotype"
+)  |> 
+  pivot_longer(
+    cols = c(dis_TE_proportion, near_TE_proportion),
+    names_to = 'site_type',
+    values_to = 'mutation_proportion'
+  ) |> 
+  unite("mut_geno_type", c("genotype","site_type"), remove = FALSE)
+
+combined_genotype$mut_geno_type <- factor(combined_genotype$mut_geno_type, levels = c("Strong_dis_TE_proportion","Weak_dis_TE_proportion","Strong_near_TE_proportion","Weak_near_TE_proportion"))
+
+combined_genotype_focal <- combined_genotype |> 
+  filter (genotype =="Strong")
+p <- ggplot(combined_genotype_focal, aes(x = mut_type, y = mutation_proportion, fill = mut_geno_type)) +
+  geom_bar(stat="identity",color = "black", position = "dodge", width = 0.7)+
+  #scale_fill_manual(values=c("black","#CC79A7", "#56B4E9"), guide = "none") + 
+  #scale_fill_manual(values=c("#CC79A7","#56B4E9","#CC79A7","#56B4E9"), guide = "none") + 
+  scale_fill_manual(values=c("grey","#CC79A7")) + 
+  #scale_alpha_manual(values = c(dis_TE_proportion = 0.3, near_TE_proportion = 1)) +
+  mytheme +
+  ylab("mutation proportion")# +
+  #ylim(0,0.34)
+
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/mutation_spectrum_far_near_TEs_strong_genotypes.pdf", sep = ""), plot = p, width = 16, height = 4)
+```
+
+Mutation spectrum might just show the proportion of mutation that are transition for sites near TEs vs sites distant from TEs (SFigure). Doesn't seem to be obviously different. Just seems that transition proportion may be lower for sites near TEs.
+
+### d. check ancestor correctness
+
+```{r}
+#| label: WGS and CUT_Tag SNP numbers
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+#| 
+#check ancestor correctness
+
+anc_depth_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Act_55_depth_3R.txt", col_names = F)
+
+anc_depth_3R |> 
+  summarise(mean = mean(X3),
+            median = median(X3))
+anc_depth_3R |> 
+  filter(X2 >= 17369018 & X2 <= 17370682)|> 
+  summarise(mean = mean(X3),
+            median = median(X3))
+
+act_called_site <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Act_samples_num_callable.txt", col_names = F)
+
+act_total_mutation <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Join_update_3_X_Act_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+act_total_mutation$mutation_rate=act_total_mutation$X2/act_called_site$X2/22
+
+ubi_called_site <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Separate_update_3_X_Ubi_samples_num_callable.txt", col_names = F)
+
+ubi_total_mutation <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/Join_update_3_X_Ubi_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+ubi_total_mutation$mutation_rate=ubi_total_mutation$X2/ubi_called_site$X2/22
+
+control_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_Control_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+control_ancestor <- control_list |> 
+  filter(X1 == 9)
+control_samples <- control_list |> 
+  filter(X1 > 9)
+
+ubi_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_Ubi_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+ubi_ancestor <- ubi_list |> 
+  filter(X1 == 9)
+ubi_samples <- ubi_list |> 
+  filter(X1 > 9)
+
+act_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_Act_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+act_ancestor <- act_list |> 
+  filter(X1 == 9)
+act_samples <- act_list |> 
+  filter(X1 > 9)
+
+joined_sample_ubi_ancestor_ubi <- ubi_samples |> 
+  left_join(ubi_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+
+joined_sample_ubi_ancestor_act <- ubi_samples |> 
+  left_join(act_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+
+joined_sample_act_ancestor_act <- act_samples |> 
+  left_join(act_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+
+joined_act_ancestor_act_sample <- act_ancestor |> 
+  left_join(act_samples,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+joined_ubi_ancestor_ubi_sample <- ubi_ancestor |> 
+  left_join(ubi_samples,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+joined_ubi_ancestor_act_sample <- ubi_ancestor |> 
+  left_join(act_samples,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+joined_control_ancestor_act_sample <- control_ancestor |> 
+  left_join(act_samples,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+
+joined_sample_act_ancestor_ubi <- act_samples |> 
+  left_join(ubi_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+
+joined_sample_control_ancestor_control <- control_samples |> 
+  left_join(control_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+joined_sample_ubi_ancestor_control <- ubi_samples |> 
+  left_join(control_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+joined_sample_control_ancestor_ubi <- control_samples |> 
+  left_join(ubi_ancestor,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n()
+  )
+wilcox.test(joined_sample_ubi_ancestor_act$proportion_non_na,joined_sample_act_ancestor_act$proportion_non_na,  exact=FALSE, correct=FALSE)
+
+wilcox.test(joined_sample_control_ancestor_control$proportion_non_na,joined_sample_ubi_ancestor_control$proportion_non_na,  exact=FALSE, correct=FALSE)
+
+wilcox.test(joined_sample_ubi_ancestor_ubi$proportion_non_na,joined_sample_control_ancestor_ubi$proportion_non_na,  exact=FALSE, correct=FALSE)
+
+
+ubi_nanopore_A4 <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/A4Hifi_refer_ragtag_scaffold_ubi_pd_asm5.var.txt", col_names = F) |> 
+  filter(X1 == "V" & X2 != "2L" & X2 != "2R")
+
+ubi_CUT_Tag_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_Ubi_K9_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+
+control_CUT_Tag_list |> 
+  left_join(ubi_nanopore_A4,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n(),
+    n = n()
+  )
+
+control_CUT_Tag_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_Control_K9_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+act_CUT_Tag_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_Act_K9_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+
+ovary_CUT_tag_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_ovary_CUT_Tag_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+
+proportion_snp <- ovary_CUT_tag_list |> 
+  left_join(ubi_nanopore_A4,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n(),
+    n = n()
+  )
+
+
+embryo_RNAseq_list <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/location_list_3_X_embryo_RNAseq_examples_exclude_potential_lowq_other_samples_homo_heter_mutation.txt", col_names = F)
+embryo_RNAseq_list |> 
+  left_join(ubi_nanopore_A4,  by=c('X2'='X2', 'X3'='X3')) |> 
+  group_by(X1.x, X2) |> 
+  summarise(
+    proportion_non_na = sum(!is.na(X1.y)) / n(),
+    n = n()
+  )
+  
+```
+
+### e. update with nanopore sequencing
+
+```{r}
+#| label: naopore_assemblies
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+TE_mc <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/mc_TE_ini_exclu_within_5000bp_distance_nearbyall_TE.txt", col_names = F)
+mc_TE_euch <- TE_mc |> 
+  filter((X1 == "2L_RagTag" & X2 > 95108 & X3 < 22761190) | (X1 == "2R_RagTag" & X2 > 6109605 & X3 < 25010765) | (X1 == "3L_RagTag" & X2 > 168739 & X3 < 22953393) | (X1 == "3R_RagTag" & X2 > 6507448 & X3 < 34147932) | (X1 == "X_RagTag" & X2 > 167787 & X2 < 23419235)) |> 
+  filter(!grepl('INE-1', X4)) |> 
+  mutate(length = X3 - X2,
+         mid_posi = (X2 + X3)/2) |>  
+  filter(length >= 1000)
+write.table(mc_TE_euch, file = "/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/mc_TE_euch_1kb_above.txt",col.names = F, row.names = FALSE, quote = FALSE)
+
+
+TE_act <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/act_TE_ini_exclu_within_5000bp_distance_nearbyall_TE.txt", col_names = F)
+act_TE_euch <- TE_act |> 
+  filter((X1 == "2L_RagTag" & X2 > 97997 & X3 < 22728428) | (X1 == "2R_RagTag" & X2 > 6029008 & X3 < 24938253) | (X1 == "3L_RagTag" & X2 > 172144 & X3 < 23000420) | (X1 == "3R_RagTag" & X2 > 6161963 & X3 < 33691793) | (X1 == "X_RagTag" & X2 > 150440 & X2 < 23387680)) |> 
+  filter(!grepl('INE-1', X4)) |> 
+  mutate(length = X3 - X2,
+         mid_posi = (X2 + X3)/2) |> 
+  filter(length >= 1000)
+write.table(act_TE_euch, file = "/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/act_TE_euch_1kb_above.txt",col.names = F, row.names = FALSE, quote = FALSE)
+
+
+TE_ubi <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ubi_TE_pd_exclu_within_5000bp_distance_nearbyall_TE.txt", col_names = F)
+ubi_TE_euch <- TE_ubi |> 
+  filter((X1 == "2L_RagTag" & X2 > 114898 & X3 < 23005478) | (X1 == "2R_RagTag" & X2 > 6014470 & X3 < 25033950) | (X1 == "3L_RagTag" & X2 > 224305 & X3 < 23038951) | (X1 == "3R_RagTag" & X2 > 5984887 & X3 < 33613459) | (X1 == "X_RagTag" & X2 > 150449 & X2 < 23389038)) |> 
+  filter(!grepl('INE-1', X4)) |> 
+  mutate(length = X3 - X2,
+         mid_posi = (X2 + X3)/2
+         ) |> 
+  filter(length >= 1000)
+  write.table(ubi_TE_euch, file = "/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ubi_TE_euch_1kb_above.txt",col.names = F, row.names = FALSE, quote = FALSE)
+
+TE_act_ubi_coord <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/ubi_euch_1kb_TE_focal_5000bp_distance_act_location.txt", col_names = F)
+
+TE_A4_mc_coord <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/A4_euch_1kb_TE_focal_5000bp_distance_mc_location.txt", col_names = F)
+TE_A4_mc_coord <- TE_A4_mc_coord |> 
+  mutate(length_focal = X3 - X2,
+         loc = (X8 + X9)/2)
+
+TE_coord <- TE_A4_mc_coord
+TE_data <- mc_TE_euch
+
+#Chr_TE <- c("2L_RagTag", "2R_RagTag", "3L_RagTag", "3R_RagTag", "X_RagTag")
+#iter_out <- tibble() # Container for output
+#for (i in 1:length(Chr_TE)) {
+  #TE_coord <- TE_act_ubi_coord |> 
+    #filter(X1 == Chr_TE[[i]])
+
+  #TE_data <- ubi_TE_euch |>  
+    #filter(X1 == Chr_TE[[i]])
+  
+  list_match <- TE_coord |> 
+    left_join(TE_data, join_by(X7 == X1), relationship = "many-to-many") |> 
+    group_nest(X1, loc) |> 
+    mutate(mid_posi = map2_dbl(loc, data, \(x, y) y$mid_posi[which.min(abs(y$mid_posi - x))]),
+    error = abs(loc - mid_posi)) |> 
+    select(-data) |> 
+    left_join(TE_coord, join_by(loc)) |> 
+    left_join(TE_data, join_by(mid_posi)) |> 
+    filter(error < 50 & abs(length_focal - length) < 1000) 
+    #iter_out <- bind_rows(iter_out, list_match)
+#}
+    write.table(list_match, file = "/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/A4_TE_act_euch_1kb_shared.txt", sep = "\t", col.names = F, row.names = FALSE, quote = FALSE)
+
+
+```
+
+## 3. DSPR analysis
+
+Comparing the sequences of samples from different generations, I can called SNP mutations
+
+1.  DNA-based TEs flanking regions show higher SNP rates than homologous sequences without TEs (bootstrap testing, p = 0.007) but not RNA-based TEs
+2.  Using the K9 data from three strains (A4, A6, and A7), the flanking regions of TEs with K9 enrichment to show lower SNP rates than those without (MWU test, p = 0.039). (need to redo analysis using Mahul's TE annotations?)
+
+### a. TE class analysis
+
+```{r}
+#| label: DSPR_each_TEs
+#| eval: false
+#| echo: false
+#| warning: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 5
+
+Chrom <- read_csv(
+  "CM010541.1,CM010569.1,CM010576.1,chrX
+  CM010542.1,CM010570.1,CM010577.1,chr2L
+  CM010543.1,CM010571.1,CM010578.1,chr2R
+  CM010544.1,CM010572.1,CM010579.1,chr3L
+  CM010545.1,CM010573.1,CM010580.1,chr3R",
+  col_names = c("A4", "A6", "A7","Chromo")
+)
+
+#WOTE_each <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/WO_TEs_each_locus_homo_heter_mutation_rates_fliter_200_5000bp", col_names = F)
+WOTE_each <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/WO_TEs_each_locus_homo_heter_mutation_rates_fliter_200_8000bp", col_names = F)
+
+WithTE <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/With_TEs_avg_locus_homo_heter_mutation_200", col_names = F)
+WOTE <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/WO_TEs_avg_locus_homo_heter_mutation_200", col_names = F)
+
+#WOTE_each <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/WO_SVs_each_locus_homo_heter_mutation_rates_fliter_0", col_names = F)
+#WithTE <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/With_SVs_avg_locus_homo_heter_mutation_0", col_names = F)
+
+
+WithTE_rate <- WithTE |> 
+  mutate(
+    wTE_rate = X6/X7
+    ) |> 
+  filter(X4 >= 200 & X4 <= 15000) |> 
+  drop_na(wTE_rate)
+
+Average_WithTE_each_WOTE <- WithTE_rate |>
+  inner_join(
+    WOTE_each, join_by(X1, X2)
+  ) |> 
+  #filter(X9.x == "LTR" | X9.x == "LINE")
+  filter(X9.x == "DNA")
+mean_WithTErate = mean(Average_WithTE_each_WOTE$wTE_rate)
+
+per_wo_TE_rate_mean = c()
+for (i in 1:1000){
+  per_TE_rate = c();
+  for (j in 1:nrow(Average_WithTE_each_WOTE)){
+    wo_TE = tail(c(Average_WithTE_each_WOTE[j,]), 10)
+    wo_TE_foc = as.numeric(wo_TE[!is.na(wo_TE)])
+    #n = as.integer(Average_WithTE_each_WOTE[j,8])
+    n = 1
+    boot_wo_TE = sample(wo_TE_foc, n, replace = T)
+    boot_sum_rate = 0; boot_sum_num = 0;
+    for (k in length(boot_wo_TE)){
+    boot_sum_rate = boot_sum_rate + boot_wo_TE[k]
+    boot_sum_num = boot_sum_num + 1
+    }
+    avg_eachTE_rate = boot_sum_rate/boot_sum_num
+    #new_row <- c(Average_WithTE_each_WOTE[j,] , avg_eachTE_rate)
+    #df <- rbind(df,new_row)
+    per_TE_rate = c(per_TE_rate, avg_eachTE_rate)
+  }
+  per_wo_TE_rate_mean = c(per_wo_TE_rate_mean, mean(per_TE_rate))
+}
+sum(per_wo_TE_rate_mean < mean_WithTErate)
+
+#"#bf478e","#687cbb"
+data <- as_tibble(per_wo_TE_rate_mean)
+p <- ggplot(data, aes(x = value)) + 
+  geom_histogram(position = "identity", bins = 18, fill = "#b3c074", color = "black") + 
+  geom_vline(xintercept = mean_WithTErate, linetype = "solid", color = "#687cbb", size = 1.5) +
+  xlab("SNP rates") +
+  mytheme_black
+p
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/DNA_withTE_wo_boostrap_SNP_rate_8000pb_black.pdf", sep = ""), plot = p, width = 8, height = 6)
+
+
+
+```
+
+### b. TE with K9 for A4, A6, and A7 analysis
+
+```{r}
+#| label: DSPR_TEs_K9_A4_A6_A7
+#| eval: false
+#| echo: false
+#| warning: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 5
+
+########### remeasure with new pipline
+######### maybe try global mean K9 standariztion?
+hist = "A4"
+A4_TE_K9 <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_mahul_annotated.txt"), col_names = F)
+list_A4 <- A4_TE_K9 |> 
+mutate(K9_enrich = (X10 + X11 + X12 + X13)/4,
+       category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+       )|> 
+  select(X1:X8, K9_enrich, category)  |> 
+left_join(WithTE, join_by(X1 == X1, X2 == X2)) |> 
+    mutate(wTE_rate = X6.y/X7.y)
+
+hist = "A6"
+A6_TE_K9 <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_mahul_annotated.txt"), col_names = F)
+list_A6 <- A6_TE_K9 |> 
+mutate(K9_enrich = (X10 + X11 + X12 + X13 + X14 + X15)/6,
+       category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+       )  |> 
+  select(X1:X8, K9_enrich, category)  |> 
+left_join(WithTE, join_by(X1 == X1, X2 == X2)) |> 
+    mutate(wTE_rate = X6.y/X7.y)
+
+hist = "A7"
+A7_TE_K9 <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_mahul_annotated.txt"), col_names = F)
+list_A7 <- A7_TE_K9 |> 
+mutate(across(X10:X15, as.numeric),
+      K9_enrich = (X10 + X11 + X12 + X13 + X14 + X15)/6,
+       category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+       )  |> 
+    select(X1:X8, K9_enrich, category)  |> 
+left_join(WithTE, join_by(X1 == X1, X2 == X2)) |> 
+    mutate(wTE_rate = X6.y/X7.y)
+
+
+three_strains <- bind_rows(list(list_A4, list_A6, list_A7))
+###############
+Average_WithTE_each_enrich <- three_strains |>
+  filter (category == "enrich")  |> 
+    mutate(wTE_rate = X6.y/X7.y)
+Average_WithTE_each_not_enrich <- three_strains |>
+  filter (category == "not_enrich") |> 
+    mutate(wTE_rate = X6.y/X7.y)
+wilcox.test(Average_WithTE_each_enrich$wTE_rate,Average_WithTE_each_not_enrich$wTE_rate,  exact=FALSE, correct=FALSE, paired = F)
+################
+
+Average_WithTE_WOTE_enrich <- three_strains |>
+  filter (category == "enrich") |> 
+    filter (X9 != "DNA") |> 
+  inner_join(
+    WOTE_each, join_by(X1 == X1, X2 == X2)
+  ) |> 
+  drop_na(wTE_rate)
+Average_WithTE_each_WOTE <- Average_WithTE_WOTE_enrich
+########
+
+Average_WithTE_WOTE_not_enrich <- three_strains |>
+  filter (category == "not_enrich") |> 
+      #filter (X9 == "DNA") |> 
+  inner_join(
+    WOTE_each, join_by(X1 == X1, X2 == X2)
+  )  |> 
+  drop_na(wTE_rate)
+Average_WithTE_each_WOTE <- Average_WithTE_WOTE_not_enrich
+#########
+
+
+wilcox.test(Average_WithTE_WOTE_enrich$wTE_rate, Average_WithTE_WOTE_not_enrich$wTE_rate,  exact=FALSE, correct=FALSE, paired = F)
+
+per_wo_TE_rate_mean = c()
+for (i in 1:1000){
+  per_TE_rate = c();
+  for (j in 1:nrow(Average_WithTE_each_WOTE)){
+    wo_TE = tail(c(Average_WithTE_each_WOTE[j,]), 10)
+    wo_TE_foc = as.numeric(wo_TE[!is.na(wo_TE)])
+    #n = as.integer(Average_WithTE_each_WOTE[j,8])
+    n = 1
+    boot_wo_TE = sample(wo_TE_foc, n, replace = T)
+    boot_sum_rate = 0; boot_sum_num = 0;
+    for (k in length(boot_wo_TE)){
+    boot_sum_rate = boot_sum_rate + boot_wo_TE[k]
+    boot_sum_num = boot_sum_num + 1
+    }
+    avg_eachTE_rate = boot_sum_rate/boot_sum_num
+    #new_row <- c(Average_WithTE_each_WOTE[j,] , avg_eachTE_rate)
+    #df <- rbind(df,new_row)
+    per_TE_rate = c(per_TE_rate, avg_eachTE_rate)
+  }
+  per_wo_TE_rate_mean = c(per_wo_TE_rate_mean, mean(per_TE_rate))
+}
+mean_WithTErate = mean(Average_WithTE_each_WOTE$wTE_rate)
+sum(per_wo_TE_rate_mean < mean_WithTErate)
+    
+median(per_wo_TE_rate_mean)
+
+three_strains |> 
+  group_by(category) |>
+  summarize(
+    mean_mu = mean(X6.y/X7.y, na.rm = TRUE),
+    n = n()
+  )
+
+color_choice <- c('grey','#56B4E9')
+#three_strains$id <- factor(three_strains$id, levels=c("Control", "Act","Ubi"))
+ggplot(three_strains, aes(x = category, y = wTE_rate, fill = category, group = category)) + 
+  scale_fill_manual(values = color_choice) +
+  geom_violin(color = NA) +
+  geom_dotplot(binaxis='y', stackdir='center', dotsize = 0.7, color = "black")
+
+#CC79A7,#56B4E9
+data <- as_tibble(per_wo_TE_rate_mean)
+p <- ggplot(data, aes(x = value)) + 
+  geom_histogram(position = "identity", bins = 18, fill = "#b3c074", color = "black") + 
+  geom_vline(xintercept = mean_WithTErate, linetype = "solid", color = "#CC79A7", size = 1.5) +
+  xlab("SNP rates") +
+  mytheme_black
+p
+ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/Yes_K9enrich_A4_A6_A7_TE_distribution_SNP_rate_RNA_black.pdf", sep = ""), plot = p, width = 8, height = 6)
+
+
+```
+
+### backup_unused_pipline
+
+```{r}
+#| label: DSPR_TEs_K9_A4_A6_A7_backup
+#| eval: false
+#| echo: false
+#| warning: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 5
+
+################ old pipline
+hist = "A4"
+strainTE <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/", hist, "_TE_present_absent_dm6_for_af_0"), col_names = F)
+strainTE <- strainTE |> 
+mutate(site = (X4 + X5)/2)
+
+TE_K9_release <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/recombination/result/CUT_TAG_result/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_include_ambiguous.txt"), col_names = F) |> 
+  mutate(
+    posi = (X3 + X4)/2,
+    K9_enrich = (X10 + X11 + X12 + X13)/4,
+    #K9_enrich = (X9 + X10 + X11 + X12 + X13 + X14)/6,
+    category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+    ) |> 
+  left_join(Chrom, join_by("X2" == "A4")) |> #add to change the strain name
+  select(X1:X5, posi, K9_enrich, category, Chromo) 
+
+list_A4 <- TE_K9_release |>
+  left_join(strainTE, join_by(Chromo == X1), relationship = "many-to-many") |> 
+  group_nest(Chromo, posi) |> 
+  mutate(site = map2_dbl(posi, data, \(x, y) y$site[which.min(abs(y$site - x))]),
+         error = abs(posi - site)) |> 
+  select(-data) |> 
+  left_join(TE_K9_release, join_by(posi)) |> 
+  left_join(strainTE, join_by(site)) |> 
+  left_join(WithTE, join_by(X1.y == X1, X2.y == X2)) |> 
+  filter(!is.na(X7.y) & X7.y > 8000 & error <= 1000) |> 
+  distinct(Chromo.x, posi, site, .keep_all = TRUE)
+
+hist = "A6"
+strainTE <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/", hist, "_TE_present_absent_dm6_for_af_0"), col_names = F)
+strainTE <- strainTE |> 
+mutate(site = (X4 + X5)/2)
+
+TE_K9_release <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/recombination/result/CUT_TAG_result/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_include_ambiguous.txt"), col_names = F) |> 
+  mutate(
+    posi = (X3 + X4)/2,
+    K9_enrich = (X9 + X10 + X11 + X12 + X13 + X14)/6,
+    category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+    ) |> 
+  left_join(Chrom, join_by("X2" == "A6")) |> #add to change the strain name
+  select(X1:X5, posi, K9_enrich, category, Chromo) 
+
+list_A6 <- TE_K9_release |>
+  left_join(strainTE, join_by(Chromo == X1), relationship = "many-to-many") |> 
+  group_nest(Chromo, posi) |> 
+  mutate(site = map2_dbl(posi, data, \(x, y) y$site[which.min(abs(y$site - x))]),
+         error = abs(posi - site)) |> 
+  select(-data) |> 
+  left_join(TE_K9_release, join_by(posi)) |> 
+  left_join(strainTE, join_by(site)) |> 
+  left_join(WithTE, join_by(X1.y == X1, X2.y == X2)) |> 
+  filter(!is.na(X7.y) & X7.y > 8000 & error <= 1000) |> 
+  distinct(Chromo.x, posi, site, .keep_all = TRUE)
+
+hist = "A7"
+strainTE <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/", hist, "_TE_present_absent_dm6_for_af_0"), col_names = F)
+strainTE <- strainTE |> 
+mutate(site = (X4 + X5)/2)
+
+TE_K9_release <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/recombination/result/CUT_TAG_result/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_include_ambiguous.txt"), col_names = F) |> 
+  mutate(
+    posi = (X3 + X4)/2,
+    K9_enrich = (X9 + X10 + X11 + X12 + X13 + X14)/6,
+    category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+    ) |> 
+  left_join(Chrom, join_by("X2" == "A7")) |> #add to change the strain name
+  select(X1:X5, posi, K9_enrich, category, Chromo) 
+
+list_A7 <- TE_K9_release |>
+  left_join(strainTE, join_by(Chromo == X1), relationship = "many-to-many") |> 
+  group_nest(Chromo, posi) |> 
+  mutate(site = map2_dbl(posi, data, \(x, y) y$site[which.min(abs(y$site - x))]),
+         error = abs(posi - site)) |> 
+  select(-data) |> 
+  left_join(TE_K9_release, join_by(posi)) |> 
+  left_join(strainTE, join_by(site)) |> 
+  left_join(WithTE, join_by(X1.y == X1, X2.y == X2)) |> 
+  filter(!is.na(X7.y) & X7.y > 8000 & error <= 1000) |> 
+  distinct(Chromo.x, posi, site, .keep_all = TRUE)
+
+
+```
