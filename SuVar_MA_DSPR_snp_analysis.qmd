@@ -96,7 +96,6 @@ p <- ggplot(rna_seq, aes(x = promoter, y = RPKM, color = promoter, fill = promot
   geom_point(position = position_jitterdodge(jitter.width = 0.6, dodge.width = 0.3), size = 2) +
   mytheme +
   ylab("RPKM")
-
 ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/plot/RNAseq_SuVar3-9_two_genotype_exp_magnitude.pdf", sep = ""), plot = p, width = 7, height = 5)
 
 
