@@ -276,7 +276,6 @@ mean(Ubi$avg_mag, na.rm = T);median(Ubi$avg_mag, na.rm = T)
 wilcox.test(Act$avg_mag, Ubi$avg_mag,  exact=FALSE, correct=FALSE, paired = T)
 #wilcox.test(Control$avg_mag_excl, Ubi$avg_mag_excl,  exact=FALSE, correct=FALSE, paired = T)
 
-
 wilcox.test(Ubi$avg_mag, Act$avg_mag,  exact=FALSE, correct=FALSE, paired = T, alternative = "less")
 
 
