@@ -127,13 +127,12 @@ strong_snp_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_re
 strong_snp_X <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/strong_mutation_rate_weight_X.tsv")
 strong_snp <- bind_rows(list(strong_snp_2L, strong_snp_2R, strong_snp_3L, strong_snp_3R, strong_snp_X))
 
-neutral_snp_2L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_2L.tsv")
-neutral_snp_2R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_2R.tsv")
-neutral_snp_3L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_3L.tsv")
-#neutral_snp_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_3R.tsv")
-neutral_snp_X <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_X.tsv")
-#neutral_snp <- bind_rows(list(neutral_snp_2L, neutral_snp_2R, neutral_snp_3L, neutral_snp_3R, neutral_snp_X))
-neutral_snp <- bind_rows(list(neutral_snp_2L, neutral_snp_2R, neutral_snp_3L,  neutral_snp_X))
+neutral_snp_2L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_weight_2L.tsv")
+neutral_snp_2R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_weight_2R.tsv")
+neutral_snp_3L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_weight_3L.tsv")
+neutral_snp_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_weight_3R.tsv")
+neutral_snp_X <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_weight_X.tsv")
+neutral_snp <- bind_rows(list(neutral_snp_2L, neutral_snp_2R, neutral_snp_3L, neutral_snp_3R, neutral_snp_X))
 
 TE_family_info <- TE_test |> 
   mutate(name_lowercase = tolower(te_name)) |> 
@@ -212,7 +211,7 @@ withoutTE_cols <- seq(55, ncol(neutral_snp_test), by = 2)
 
 neutral_snp_test$withTE_means <- apply(neutral_snp_test[, withTE_cols], 1, mean, na.rm = TRUE)
 neutral_snp_test$withoutTE_means <- apply(neutral_snp_test[, withoutTE_cols], 1, mean, na.rm = TRUE)
-neutral_snp_test$age_means <- apply(neutral_snp_test[, 6:55], 1, mean, na.rm = TRUE)
+neutral_snp_test$age_means <- apply(neutral_snp_test[, 4:53], 1, mean, na.rm = TRUE)
 neutral_snp_mu <- neutral_snp_test |> 
   #filter(num_carriers >= 4) |> 
   filter(age_means >= 5000 & age_means <= 500000)
@@ -220,28 +219,8 @@ neutral_snp_mu <- neutral_snp_test |>
 median(neutral_snp_mu$withTE_means, na.rm = TRUE); median(neutral_snp_mu$withoutTE_means, na.rm = TRUE)
 wilcox.test(neutral_snp_mu$withTE_means, neutral_snp_mu$withoutTE_means, paired = T)
 t.test(neutral_snp_mu$withTE_means, neutral_snp_mu$withoutTE_means, paired = T)
-
-TE_permut_test <- strong_snp |> 
-  #filter(num_carriers >= 4) |> 
-  #filter(te_age >= 5000) |> 
-    #filter(Class == "RNA") |> 
-  select(1:6, intersect(contains("bin"), ends_with("te_rate"))) |> 
-  mutate(dif_mut_rate = bin0_500_5000_with_te_rate - bin0_500_5000_without_te_rate)
-
-mean_dif = mean(TE_permut_test$dif_mut_rate, na.rm = T); median_dif = median(TE_permut_test$dif_mut_rate, na.rm = T)
-mean_dif;median_dif
-
-perm_mean=c(); perm_median=c()
-for (i in 1:5){
-  index = 7 + i*2
-  #print(index)
-  perm_dif = TE_permut_test[, index] - TE_permut_test[, (index + 1)]
-  perm_mean = c(perm_mean, mean(perm_dif[,1], na.rm = T))
-  perm_median = c(perm_median, median(perm_dif[,1], na.rm = T))
-} 
-sum(perm_mean < mean_dif)
-sum(perm_median < median_dif)
-
+cor.test(strong_snp_mu$age_means, strong_snp_mu$withTE_means, method = "spearman")
+cor.test(strong_snp_mu$age_means, strong_snp_mu$withoutTE_means, method = "spearman")
 
 
 TE_mutation_rate <- TE_family_info |> 
