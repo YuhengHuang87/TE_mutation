@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#SBATCH --job-name=ARG_downstream      ## Name of the job.
+#SBATCH -A grylee_lab     ## account to charge
+#SBATCH -p standard          ## partition/queue name
+#SBATCH --nodes=1            ## (-N) number of nodes to use
+#SBATCH --ntasks=1           ## (-n) number of tasks to launch
+#SBATCH --cpus-per-task=1    ## number of cores the job needs
+
+#SBATCH --error=slurm-%J.err ## error log file
+#SBATCH --time=5-00:00:00 
+
+module load mamba/24.3.0
+. ~/.mymambainit-24.3.0
+mamba activate snpeff
+
+
+for chr in 2L 2R 3L 3R X; do
+    snpEff BDGP6.115 /dfs7/grylee/yuhenh3/mutation_accumulation/ARG/Rech_2022_data/SNPs_vcf/PhasedSNPsFitTEs_${chr}_euchromatic.vcf > PhasedSNPsFitTEs_${chr}_euchromatic.ann.vcf
+done
+

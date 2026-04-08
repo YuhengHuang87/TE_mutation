@@ -1,0 +1,382 @@
+```{r}
+#| label: load-packages
+#| include: false
+
+library(tidyverse)
+library(ggplot2)    
+library(ggpattern)
+library(dplyr)
+library(readr) # Assuming readr might be useful, but sticking to read.table as in original
+library(data.table)
+
+mytheme = theme(
+#	plot.background = element_rect(fill = 'black', color = "black"), 
+	axis.ticks.y = element_line(color = "black", linewidth = 1), 
+	axis.ticks.x = element_line(color = "black", linewidth = 1), 
+	axis.ticks.length = unit(0.5, "cm"), 
+	axis.line.x = element_line(color = "black", linewidth = 2), 
+	axis.line.y = element_line(color = "black", linewidth = 2), 
+	axis.text.x = element_text(color = 'black', size  = 16, margin = margin(rep(4, 4))), 
+	axis.text.y = element_text(color = 'black', size = 16, margin = margin(rep(2, 4))), 
+	axis.title.x = element_text(color = "black", size = 14, margin = margin(rep(5, 4))), 
+	axis.title.y = element_text(color = "black", size = 14,  margin = margin(rep(5, 4))), 
+	plot.title = element_text(color = "black", size = 16, margin = margin(rep(5, 4))), 
+	panel.background = element_rect(fill = "white"), 
+#	panel.border = element_blank(),
+	panel.grid.major.y = element_blank(), 
+	panel.grid.minor.y = element_blank(), 
+	panel.grid.major.x = element_blank(), 
+	panel.grid.minor.x = element_blank(),
+	legend.background = element_blank())
+
+#setwd("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph")
+```
+
+## 1. singer analysis
+
+### a. check convergent
+
+```{r}
+#| label: examine_convergent
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+
+# --- Configuration ---
+chr <- "3R"
+
+base_path <- "/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/"
+output_path <- "/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/"
+
+# --- Load Data ---
+
+# 1. Local TE locations
+converg <- read.table(paste0(base_path, "singer_", chr, "_traces.txt"), header = T, fill = T)
+
+
+# Output
+#output_file <- paste0(output_path, hist, "_TE_focal_alter_strain_K9_enrichment_separate_replicates.txt")
+output_file <- paste0(output_path, hist, "_TE_focal_alter_strain_K9_avg_count_separate_replicates.txt")
+write.table(TE_focal_alter_control_K9, file = output_file, col.names = T, row.names = FALSE, quote = FALSE)
+```
+
+### b. TE age and mutation rates
+
+```{r}
+#| label: TE_age_mutation
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+# --- Load and Process TE Taxonomy Data ---
+te_taxonomy_file <- "/Users/yuhenghuang/Documents/Postdoc_UCI/names_D_mel_TEs"
+te_taxonomy_lines <- readLines(te_taxonomy_file)
+
+# Parse the lines to extract family and superfamily
+# Format: >"family_id"#"superfamily_id"
+# Remove the leading ">"
+te_taxonomy_clean <- str_remove(te_taxonomy_lines, "^>")
+
+# Split by "#"
+te_taxonomy_df <- tibble(raw_line = te_taxonomy_clean) %>%
+  separate(raw_line, into = c("te_family", "te_superfamily"), sep = "#", extra = "merge", fill = "right") %>%
+  # Ensure distinct mapping
+  distinct(te_family, .keep_all = TRUE)
+
+te_family_class <- te_taxonomy_df %>%
+  separate_wider_delim(
+    cols = te_superfamily,       # The column to split
+    delim = "/",       # The delimiter to split by
+    names = c("class", "super_family"), # The names for the new columns
+    too_few = "align_start", # Handle cases with too few delimiters
+    too_many = "merge" # Handle cases with too many delimiters
+  )
+
+TE_family <- read.csv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/Rech_2022_data/TE_annotations/Supplimentary_Data5_family_info.csv", header = T, fill = T)
+TE_family_class <- TE_family |> 
+  select(Class, Order, SuperFamily, Family, Length)
+
+test_data <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/test_TE_mutation_rate_results.tsv")
+
+test_data <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/test_TE_mutation_rate_isolated_results.tsv")
+
+test_data <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/test_TE_mutation_rate_masked_results_99.tsv")
+
+test_data <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/test_TE_mutation_rate_binned_results_99.tsv")
+
+test_data <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/redate_TE_mutation_rate_binned_results_99.tsv")
+
+
+TE_2L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/TE_mutation_rate_2L.tsv")
+TE_2R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/TE_mutation_rate_2R.tsv")
+TE_3L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/TE_mutation_rate_3L.tsv")
+TE_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/TE_mutation_rate_3R.tsv")
+TE_X <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/TE_mutation_rate_X.tsv")
+TE_test <- bind_rows(list(chr2L = TE_2L, chr2R = TE_2R, chr3L = TE_3L, chr3R = TE_3R, chrX = TE_X), .id = "group_name")
+
+
+strong_snp_2L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/strong_mutation_rate_weight_2L.tsv")
+strong_snp_2R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/strong_mutation_rate_weight_2R.tsv")
+strong_snp_3L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/strong_mutation_rate_weight_3L.tsv")
+strong_snp_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/strong_mutation_rate_weight_3R.tsv")
+strong_snp_X <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/strong_mutation_rate_weight_X.tsv")
+strong_snp <- bind_rows(list(strong_snp_2L, strong_snp_2R, strong_snp_3L, strong_snp_3R, strong_snp_X))
+
+neutral_snp_2L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_2L.tsv")
+neutral_snp_2R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_2R.tsv")
+neutral_snp_3L <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_3L.tsv")
+#neutral_snp_3R <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_3R.tsv")
+neutral_snp_X <- read_tsv("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/results/neutral_mutation_rate_X.tsv")
+#neutral_snp <- bind_rows(list(neutral_snp_2L, neutral_snp_2R, neutral_snp_3L, neutral_snp_3R, neutral_snp_X))
+neutral_snp <- bind_rows(list(neutral_snp_2L, neutral_snp_2R, neutral_snp_3L,  neutral_snp_X))
+
+TE_family_info <- TE_test |> 
+  mutate(name_lowercase = tolower(te_name)) |> 
+  left_join(te_family_class |> mutate(id = tolower(te_family)), 
+            join_by(name_lowercase == id)) |> 
+  filter(!is.na(class)) |> 
+  mutate(category = if_else(class == "DNA", "DNA", "RNA"))
+ 
+#TE_family_info <- TE_test |>
+#  left_join(TE_family_class, join_by(te_name == Family))
+              
+              
+TE_ps_test <- TE_family_info |> 
+select(1:4, class, category, ends_with("te_age"), intersect(contains("bin"), ends_with("te_rate")))
+#select(1:3, Class, Order, ends_with("te_age"), intersect(contains("bin"), ends_with("te_rate")))
+withTE_cols  <- seq(57, ncol(TE_ps_test), by = 2)
+withoutTE_cols <- seq(58, ncol(TE_ps_test), by = 2)
+
+TE_ps_test$withTE_means <- apply(TE_ps_test[, withTE_cols], 1, mean, na.rm = TRUE)
+TE_ps_test$withoutTE_means <- apply(TE_ps_test[, withoutTE_cols], 1, mean, na.rm = TRUE)
+TE_ps_test$age_means <- apply(TE_ps_test[, 7:56], 1, mean, na.rm = TRUE)
+TE_test_data <- TE_ps_test |> 
+  select(1:6, withTE_means, withoutTE_means, age_means)
+
+
+output_path <- "/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/"
+output_file <- paste0(output_path, "TE_data_age_with_withoutTE_mutation.txt")
+write.table(TE_test_data, file = output_file, col.names = T, row.names = FALSE, quote = FALSE)
+
+
+DNA_TE_mu <- TE_test_test |> 
+  filter(category == "DNA") |> 
+  #filter(Class == "DNA") |> 
+  #filter(num_carriers >= 4) |> 
+  filter(!is.na(withTE_means) & !is.na(withoutTE_means)) |> 
+  filter(age_means >= 5000 & age_means <= 500000)
+
+RNA_TE_mu <- TE_permut_test |> 
+  filter(category == "RNA") |> 
+  #filter(Class == "RNA") |> 
+  #filter(num_carriers >= 4) |> 
+  filter(!is.na(withTE_means) & !is.na(withoutTE_means)) |> 
+  filter(age_means >= 5000 & age_means <= 500000)
+
+median(DNA_TE_mu$withTE_means, na.rm = TRUE); median(DNA_TE_mu$withoutTE_means, na.rm = TRUE)
+wilcox.test(DNA_TE_mu$withTE_means, DNA_TE_mu$withoutTE_means, paired = T)
+t.test(DNA_TE_mu$withTE_means, DNA_TE_mu$withoutTE_means, paired = T)
+
+median(RNA_TE_mu$withTE_means, na.rm = TRUE); median(RNA_TE_mu$withoutTE_means, na.rm = TRUE)
+wilcox.test(RNA_TE_mu$withTE_means, RNA_TE_mu$withoutTE_means, paired = T)
+t.test(RNA_TE_mu$withTE_means, RNA_TE_mu$withoutTE_means, paired = T)
+
+
+strong_snp_test <- strong_snp |> 
+  select(1:3, ends_with("te_age"), intersect(contains("bin"), ends_with("te_rate")))
+withTE_cols  <- seq(54, ncol(strong_snp_test), by = 2)
+withoutTE_cols <- seq(55, ncol(strong_snp_test), by = 2)
+
+strong_snp_test$withTE_means <- apply(strong_snp_test[, withTE_cols], 1, mean, na.rm = TRUE)
+strong_snp_test$withoutTE_means <- apply(strong_snp_test[, withoutTE_cols], 1, mean, na.rm = TRUE)
+strong_snp_test$age_means <- apply(strong_snp_test[, 4:53], 1, mean, na.rm = TRUE)
+strong_snp_mu <- strong_snp_test |> 
+  #filter(num_carriers >= 4) |> 
+  filter(age_means >= 10000 & age_means <= 100000)
+
+median(strong_snp_mu$withTE_means, na.rm = TRUE); median(strong_snp_mu$withoutTE_means, na.rm = TRUE)
+wilcox.test(strong_snp_mu$withTE_means, strong_snp_mu$withoutTE_means, paired = T)
+t.test(strong_snp_mu$withTE_means, strong_snp_mu$withoutTE_means, paired = T)
+cor.test(strong_snp_mu$age_means, strong_snp_mu$withTE_means, method = "spearman")
+cor.test(strong_snp_mu$age_means, strong_snp_mu$withoutTE_means, method = "spearman")
+
+neutral_snp_test <- neutral_snp |> 
+  select(1:3, ends_with("te_age"), intersect(contains("bin"), ends_with("te_rate")))
+withTE_cols  <- seq(54, ncol(neutral_snp_test), by = 2)
+withoutTE_cols <- seq(55, ncol(neutral_snp_test), by = 2)
+
+neutral_snp_test$withTE_means <- apply(neutral_snp_test[, withTE_cols], 1, mean, na.rm = TRUE)
+neutral_snp_test$withoutTE_means <- apply(neutral_snp_test[, withoutTE_cols], 1, mean, na.rm = TRUE)
+neutral_snp_test$age_means <- apply(neutral_snp_test[, 6:55], 1, mean, na.rm = TRUE)
+neutral_snp_mu <- neutral_snp_test |> 
+  #filter(num_carriers >= 4) |> 
+  filter(age_means >= 5000 & age_means <= 500000)
+
+median(neutral_snp_mu$withTE_means, na.rm = TRUE); median(neutral_snp_mu$withoutTE_means, na.rm = TRUE)
+wilcox.test(neutral_snp_mu$withTE_means, neutral_snp_mu$withoutTE_means, paired = T)
+t.test(neutral_snp_mu$withTE_means, neutral_snp_mu$withoutTE_means, paired = T)
+
+TE_permut_test <- strong_snp |> 
+  #filter(num_carriers >= 4) |> 
+  #filter(te_age >= 5000) |> 
+    #filter(Class == "RNA") |> 
+  select(1:6, intersect(contains("bin"), ends_with("te_rate"))) |> 
+  mutate(dif_mut_rate = bin0_500_5000_with_te_rate - bin0_500_5000_without_te_rate)
+
+mean_dif = mean(TE_permut_test$dif_mut_rate, na.rm = T); median_dif = median(TE_permut_test$dif_mut_rate, na.rm = T)
+mean_dif;median_dif
+
+perm_mean=c(); perm_median=c()
+for (i in 1:5){
+  index = 7 + i*2
+  #print(index)
+  perm_dif = TE_permut_test[, index] - TE_permut_test[, (index + 1)]
+  perm_mean = c(perm_mean, mean(perm_dif[,1], na.rm = T))
+  perm_median = c(perm_median, median(perm_dif[,1], na.rm = T))
+} 
+sum(perm_mean < mean_dif)
+sum(perm_median < median_dif)
+
+
+
+TE_mutation_rate <- TE_family_info |> 
+  filter(category == "DNA") |> 
+  #filter(num_carriers >= 4) |> 
+  filter(te_age >= 5000) |> 
+  #drop_na(ctrl_with_te_rate, ctrl_without_te_rate) |> 
+  pivot_longer(
+    #cols = c(ctrl_with_te_rate, ctrl_without_te_rate),
+    #cols = c(ctrl_bin2_2000_5000_with_te_rate, ctrl_bin2_2000_5000_without_te_rate),
+    #cols = c(with_te_rate, without_te_rate),
+    #cols = c(bin2_2000_5000_with_te_rate, bin2_2000_5000_without_te_rate),
+    cols = c(perm_bin2_2000_5000_with_te_rate, perm_bin2_2000_5000_without_te_rate),
+    names_to = "haplotype_group",
+    values_to = "mutation_rate"
+  ) 
+
+p1 <- ggplot(TE_mutation_rate, aes(x = haplotype_group, y = mutation_rate, fill = haplotype_group, color = haplotype_group, group = haplotype_group)) + 
+  scale_fill_manual(values=c('grey','#f073ab')) +
+  geom_violin(width = 1, color = "black") +
+  geom_boxplot(width = 0.07, color = "black", alpha = 0.5) +
+  labs(x = "haplotype type", y = "mutation rate") +
+  ylim(0,10^-8) +
+  mytheme
+p1
+#ggsave(file = paste("/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/plot/RNA_TE_mutation_rates_compare.pdf", sep = ""), plot = p1, width = 8, height = 6)
+
+w_te = TE_mutation_rate |> 
+  #filter(haplotype_group == "ctrl_with_te_rate")
+  #filter(haplotype_group == "ctrl_bin2_2000_5000_with_te_rate")
+  #filter(haplotype_group == "with_te_rate")
+  filter(haplotype_group == "perm_bin2_2000_5000_with_te_rate")
+wo_te = TE_mutation_rate |> 
+  #filter(haplotype_group == "ctrl_without_te_rate")
+  #filter(haplotype_group == "ctrl_bin2_2000_5000_without_te_rate")
+  #filter(haplotype_group == "without_te_rate")
+  filter(haplotype_group == "perm_bin2_2000_5000_without_te_rate")
+
+wilcox.test(w_te$mutation_rate, wo_te$mutation_rate, paired = T)
+mean(w_te$mutation_rate, na.rm = T);mean(wo_te$mutation_rate, na.rm = T)
+median(w_te$mutation_rate, na.rm = T);median(wo_te$mutation_rate, na.rm = T)
+
+
+output_path <- "/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/"
+output_file <- paste0(output_path, "TE_data_age_with_withoutTE_mutation.txt")
+write.table(A7_trans_piRNA_count, file = output_file, col.names = T, row.names = FALSE, quote = FALSE)
+
+
+```
+
+### c. K9 and estimated u
+
+```{r}
+#| label: K9_mutation
+#| warning: false
+#| echo: false
+#| fig-width: 5
+#| fig-height: 3
+#| fig-align: "center"
+
+hist = "A4"
+A4_TE_K9 <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_mahul_annotated.txt"), col_names = F)
+list_A4 <- A4_TE_K9 |> 
+mutate(K9_enrich = (X10 + X11 + X12 + X13)/4,
+       category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+       )|> 
+  select(X1:X8, K9_enrich, category)
+
+
+hist = "A6"
+A6_TE_K9 <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_mahul_annotated.txt"), col_names = F)
+list_A6 <- A6_TE_K9 |> 
+mutate(K9_enrich = (X10 + X11 + X12 + X13 + X14 + X15)/6,
+       category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+       )  |> 
+  select(X1:X8, K9_enrich, category)
+
+hist = "A7"
+A7_TE_K9 <- read_tsv(paste0("/Users/yuhenghuang/Documents/Postdoc_UCI/TE_mutation_rate/Results/CUT_Tag_output/", hist, "_TE_height_HMD_25_5000_50_mean_each_measures_mahul_annotated.txt"), col_names = F)
+list_A7 <- A7_TE_K9 |> 
+mutate(across(X10:X15, as.numeric),
+      K9_enrich = (X10 + X11 + X12 + X13 + X14 + X15)/6,
+       category = if_else(K9_enrich > 1, "enrich", "not_enrich"), .keep = "all"
+       )  |> 
+    select(X1:X8, K9_enrich, category)
+
+three_strains <- bind_rows(list(list_A4, list_A6, list_A7)) |> 
+  mutate(site = (X2 + X3)/2)
+
+output_path <- "/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/"
+output_file <- paste0(output_path, "K9_data_A4_A6_A7.txt")
+write.table(three_strains, file = output_file, col.names = T, row.names = FALSE, quote = FALSE)
+
+
+setDT(TE_test_data); setDT(three_strains)
+TE_test_data[, original_position := position]
+
+setkey(TE_test_data, group_name, position)
+setkey(three_strains, X1, site)
+
+join_closest <- TE_test_data[three_strains, on = .(group_name = X1, position = site), roll = "nearest"]
+
+TE_K9_identify <- join_closest |> 
+  mutate(dif_posi = abs(position - original_position),
+        Name_pop = te_name) |> 
+  filter(dif_posi < 200 & X8 == Name_pop) |> 
+    filter(age_means >= 5000)
+
+
+TE_K9_not_enrich <- TE_K9_identify |> 
+  #filter(category == "enrich")
+  filter(category == "not_enrich")
+
+TE_K9_enrich <- TE_K9_identify |> 
+  filter(category == "enrich")
+  #filter(category == "not_enrich")
+
+median_withTE_K9_not_enrich = median(TE_K9_not_enrich$withTE_means, na.rm = T)
+median_withoutTE_K9_not_enrich = median(TE_K9_not_enrich$withoutTE_means, na.rm = T)
+
+median_withTE_K9_enrich = median(TE_K9_enrich$withTE_means, na.rm = T)
+median_withoutTE_K9_enrich = median(TE_K9_enrich$withoutTE_means, na.rm = T)
+
+mean_dif = mean(TE_K9_test$dif_mut_rate, na.rm = T); median_dif = median(TE_K9_test$dif_mut_rate, na.rm = T)
+mean_dif;median_dif
+
+perm_mean=c(); perm_median=c()
+for (i in 1:5){
+  index = 7 + i*2
+  print(index)
+  perm_dif = TE_K9_test[[index]] - TE_K9_test[[index + 1]]
+  perm_mean = c(perm_mean, mean(perm_dif, na.rm = T))
+  perm_median = c(perm_median, median(perm_dif, na.rm = T))
+} 
+sum(perm_mean < mean_dif)
+sum(perm_median < median_dif)
+```
+

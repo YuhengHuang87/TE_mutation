@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#SBATCH --job-name=Polegon      ## Name of the job.
+#SBATCH -A grylee_lab     ## account to charge
+#SBATCH -p standard          ## partition/queue name
+#SBATCH --nodes=1            ## (-N) number of nodes to use
+#SBATCH --ntasks=1           ## (-n) number of tasks to launch
+#SBATCH --cpus-per-task=2    ## number of cores the job needs
+
+#SBATCH --error=slurm-%J.err ## error log file
+#SBATCH --time=3-00:00:00 
+
+module load mamba/24.3.0
+. ~/.mymambainit-24.3.0
+mamba activate tskit
+
+chr="3R"
+for i in {50..99}; do
+#for i in 50; do
+echo "Number: $i"
+
+#python3 /dfs7/grylee/yuhenh3/mutation_accumulation/ARG/polegon-0.1.3-alpha-linux-x86_64/polegon_master -m 5.0e-9 -input singer_${chr}_${i} -output redate_singer_${chr}_${i} -num_samples 100 -thin 20
+python3 /dfs7/grylee/yuhenh3/mutation_accumulation/ARG/polegon-0.1.3-alpha-linux-x86_64/polegon_master -m 5.0e-9 -input singer_${chr}_${i} -output redate_singer_for_strong_SNPs_${chr}_${i} -num_samples 100 -thin 20
+
+done
+#_tskit.LibraryError: A mutation's parent is not consistent with the topology of the tree. Use compute_mutation_parents to set the parents correctly.(TSK_ERR_BAD_MUTATION_PARENT)

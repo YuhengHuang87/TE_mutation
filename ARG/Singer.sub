@@ -1,0 +1,24 @@
+#!/bin/bash
+
+#SBATCH --job-name=Singer      ## Name of the job.
+#SBATCH -A grylee_lab     ## account to charge
+#SBATCH -p standard          ## partition/queue name
+#SBATCH --nodes=1            ## (-N) number of nodes to use
+#SBATCH --ntasks=1           ## (-n) number of tasks to launch
+#SBATCH --cpus-per-task=20    ## number of cores the job needs
+
+#SBATCH --error=slurm-%J.err ## error log file
+#SBATCH --time=2-00:00:00 
+
+module load mamba/24.3.0
+. ~/.mymambainit-24.3.0
+mamba activate tskit
+
+chr="3R"
+#/dfs7/grylee/yuhenh3/mutation_accumulation/ARG/SINGER-0.1.8-beta/SINGER/SINGER/parallel_singer_modified -Ne 1e6 -m 5.0e-9 -ratio 2.0 -vcf /dfs7/grylee/yuhenh3/mutation_accumulation/ARG/Rech_2022_data/SNPs_vcf/PhasedSNPsFitTEs_${chr}_euchromatic -output singer_wo_TEs_${chr} -n 100 -thin 20 -num_cores 20
+
+/dfs7/grylee/yuhenh3/mutation_accumulation/ARG/SINGER-0.1.8-beta/SINGER/SINGER/parallel_singer_modified -Ne 1e6 -m 5.0e-9 -ratio 2.0 -vcf /dfs7/grylee/yuhenh3/mutation_accumulation/ARG/Rech_2022_data/SNPs_vcf/PhasedSNPsFitTEs_${chr}_euchromatic_with_TEs -output singer_${chr} -n 100 -thin 20 -num_cores 20
+#/dfs7/grylee/yuhenh3/mutation_accumulation/ARG/SINGER-0.1.8-beta/SINGER/SINGER/singer_master -Ne 1e6 -m 5.0e-9 -ratio 2.0 -vcf PhasedSNPsFitTEs_2L_euchromatic.vcf -output singer_2L -start 500000 -end 21501009
+#/Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/SINGER-0.1.8-beta/SINGER/SINGER/parallel_singer  -Ne 1e6 -m 5.0e-9 -ratio 2.0 -vcf /Users/yuhenghuang/Documents/Postdoc_UCI/Ancestral_recombination_graph/Rech_2022_data/PhasedSNPsFitTEs_2L_euchromatic.vcf -output singer_2L -n 100 -thin 20 -num_cores 1
+
+#Hi @zhangming-m the "samples" here mean the number of random draws from a probability distribution (the posterior distribution). It is a different concept than the number of individuals in a vcf file which is sometimes also referred to as "sample". So when you set 20 samples you have 20 ARGs drawn from the posterior distribution, and likewise for 100. The good way to work with posterior sampling methods is to aggregate information from these samples (ARGs), for example compute summary statistics from all samples and then average them. Or if you prefer simpler method which only outputs one estimate, tsinfer(https://tskit.dev/tsinfer/docs/stable/tutorial.html) and Relate(https://myersgroup.github.io/relate/) are also good options.
