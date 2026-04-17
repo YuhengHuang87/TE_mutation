@@ -1,7 +1,7 @@
 # ARG analysis workflow
 #
 # Usage (Snakemake v9):
-#   ~/.pixi/bin/snakemake -s ARG.smk --executor slurm -j 10 --latency-wait 60 &
+#   ~/.pixi/bin/snakemake -s ARG.smk --executor slurm -j 25 --latency-wait 60 &
 #snakemake -s ARG.smk --executor dryrun -j 10 --latency-wait 60
 
 #Snakemake will submit all 3 jobs (potentially in parallel, depending on your -j limit). 
@@ -93,6 +93,14 @@ def focal_trees_input(wildcards):
         for i in POLEGON_SAMPLES
     ]
 
+def te_trees_input(wildcards):
+    """TE-based Polegon tree samples (used regardless of focal type)."""
+    cfg = FOCAL_TYPES["TE"]
+    return [
+        f"{cfg['trees_dir']}{wildcards.chr}/{cfg['trees_name']}{wildcards.chr}_{i}.trees"
+        for i in POLEGON_SAMPLES
+    ]
+
 # ── Target rule ───────────────────────────────────────────────────────────────
 
 rule all:
@@ -109,6 +117,11 @@ rule all:
         ),
         expand(
             VCF_DIR + "/results/{focal}_mutation_rate_skip_{chr}.tsv",
+            chr=CHROMS,
+            focal=FOCAL_TYPES.keys(),
+        ),
+        expand(
+            VCF_DIR + "/results/{focal}_mutation_rate_weight_on_TE_trees_{chr}.tsv",
             chr=CHROMS,
             focal=FOCAL_TYPES.keys(),
         ),
@@ -399,6 +412,37 @@ rule mutation_rate_weight:
         module load mamba/24.3.0
         mkdir -p $(dirname {output.tsv})
         {TSKIT_PY} {CODE_DIR}/test_TE_mutation_rate_weight.py \
+            -trees {input.trees} \
+            -vcf {input.vcf} \
+            -chrom {params.chrom} \
+            -focal {params.focal} \
+            -bins 500,5000 \
+            -min_carriers 2 \
+            -mask_neighbors \
+            -output {output.tsv} \
+        > {log} 2>&1
+        """
+
+rule mutation_rate_weight_on_TE_trees:
+    input:
+        trees = te_trees_input,
+        vcf = VCF_DIR + "/PhasedSNPsFitTEs_{chr}_euchromatic_with_TEs.ann.vcf",
+    output:
+        tsv = VCF_DIR + "/results/{focal}_mutation_rate_weight_on_TE_trees_{chr}.tsv",
+    params:
+        chrom = "{chr}",
+        focal = "{focal}",
+    resources:
+        slurm_account   = "grylee_lab",
+        slurm_partition = "standard",
+        runtime         = 7200,   # minutes (= 5 days)
+    log:
+        VCF_DIR + "/logs/{focal}_mutation_rate_weight_on_TE_trees_{chr}.log"
+    shell:
+        """
+        module load mamba/24.3.0
+        mkdir -p $(dirname {output.tsv})
+        {TSKIT_PY} {CODE_DIR}/test_SNP_mutation_rate_weight_on_TE_trees.py \
             -trees {input.trees} \
             -vcf {input.vcf} \
             -chrom {params.chrom} \
