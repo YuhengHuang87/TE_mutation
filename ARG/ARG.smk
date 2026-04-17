@@ -17,7 +17,6 @@
 #snakemake -s ARG.smk --executor slurm -j 10 \
 #  .../results/TE_mutation_rate_weight_2L.tsv
 
-
 # NOTE: update the paths in add_TEs_to_vcf.py to match HPC paths before running.
 #Right now with CHROMS = ["2R"], rule all will request all 3 focal types for chromosome 2R simultaneously
 
