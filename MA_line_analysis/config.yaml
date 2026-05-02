@@ -1,0 +1,41 @@
+### Config for the nanopore assembly + RepeatMasker + TE annotation workflow.
+###
+### Copy this file alongside (or into) the working directory you launch
+### snakemake from, and edit paths/threads to match your environment.
+
+# ---------- sample / inputs ----------
+barcode: barcode06                 # which barcode to extract and assemble
+raw_bam: suvar_nanopore_run1.bam   # basecalled reads (methylated-aware BAM)
+qv_min: 10                         # minimum mean-quality filter on the BAM
+
+reference_fasta: /dfs7/grylee/yuhenh3/mutation_accumulation/MA_lines_WGS/A4.Hifi.MT.fasta
+te_library:      /dfs7/grylee/yuhenh3/drosophila-transposons/current/D_mel_transposon_sequence_set.fa
+
+# ---------- thread budgets ----------
+hifiasm_threads: 32
+repeatmasker_threads: 32
+
+# ---------- TE annotation: euchromatin BED ----------
+# Per-assembly euchromatin BED on scaffold chromosome names
+# (e.g. "2L_RagTag\t97997\t21400000"). Defined externally — e.g. from
+# CUT&Tag data on the mc_initial genome.
+euchromatin_bed: barcode06_euchromatin.bed
+
+# ---------- TE annotation: post-RepeatMasker filtering ----------
+# Optional. Defaults match the original Perl/Python pipeline.
+te_annotation:
+  classes: "LINE,LTR,DNA,Unknown"      # RM class/family substrings to keep
+  family_merge_dist: 200               # bp gap for step-3 same-family merge
+  min_length: 500                      # bp minimum length after step 3
+  exclude_family_pattern: "INE-1"      # regex of families to drop in step 4
+  class_merge_dist: 5000               # bp gap for step-5 DNA/RNA-class merge
+
+# ---------- conda envs (existing prefixes; not built by snakemake) ----------
+# Values must be env *prefix paths*, not env names. Snakemake detects
+# directory paths and uses the env as-is (no solve, no build). Regenerate
+# with `mamba env list` if the paths change.
+conda_envs:
+  hifiasm:        /data/homezvol2/yuhenh3/.conda/envs/Hifiasm
+  ragtag:         /data/homezvol2/yuhenh3/.conda/envs/RagTag
+  assembly_stats: /data/homezvol2/yuhenh3/.conda/envs/assembly-stats
+  repeatmasker:   /data/homezvol2/yuhenh3/.conda/envs/repeatmasker
